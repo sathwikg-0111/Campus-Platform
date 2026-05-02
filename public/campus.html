@@ -1,0 +1,3574 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus — Student Community Platform</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --sage: #4a7c59;
+      --sage-l: #e8f0eb;
+      --sage-m: #a3c4af;
+      --amber: #d4862a;
+      --amber-l: #fdf0e0;
+      --coral: #c4614a;
+      --coral-l: #faede9;
+      --violet: #5b4b8a;
+      --violet-l: #eeebf5;
+      --teal: #2a7a7a;
+      --teal-l: #e4f4f4;
+      --ink: #1a1a1a;
+      --ink-m: #3d3d3d;
+      --muted: #7a7a7a;
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --border: rgba(26, 26, 26, 0.1);
+      --border-s: rgba(26, 26, 26, 0.2);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      --r: 14px;
+      --r-s: 8px;
+      --r-l: 20px;
+      --nav-h: 64px;
+    }
+
+    [data-theme="dark"] {
+      --ink: #f0ede8;
+      --ink-m: #c8c4bc;
+      --muted: #7a7775;
+      --bg: #141210;
+      --surface: #1e1c18;
+      --card: #252320;
+      --border: rgba(240, 237, 232, 0.1);
+      --border-s: rgba(240, 237, 232, 0.2);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+      --sage-l: #1a2e20;
+      --amber-l: #2a1e0a;
+      --coral-l: #2a1410;
+      --violet-l: #1e1828;
+      --teal-l: #0a2020;
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background .3s, color .3s
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      pointer-events: none
+    }
+
+    .toast-msg {
+      background: var(--ink);
+      color: var(--bg);
+      padding: .75rem 1.25rem;
+      border-radius: 100px;
+      font-size: .85rem;
+      font-weight: 500;
+      animation: toastIn .3s ease;
+      pointer-events: auto;
+      max-width: 300px
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 500;
+      height: var(--nav-h);
+      background: rgba(247, 245, 240, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      gap: 1rem;
+      transition: background .3s
+    }
+
+    [data-theme="dark"] nav {
+      background: rgba(20, 18, 16, 0.92)
+    }
+
+    .nav-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--ink), var(--sage));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+      margin-right: auto;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo span {
+      color: var(--sage);
+      -webkit-text-fill-color: var(--sage);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: .25rem
+    }
+
+    .nav-tab {
+      background: none;
+      border: none;
+      padding: .45rem .9rem;
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap
+    }
+
+    .nav-tab:hover {
+      color: var(--ink);
+      background: var(--border)
+    }
+
+    .nav-tab.active {
+      background: var(--ink);
+      color: var(--bg)
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-left: auto
+    }
+
+    .theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-s);
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: var(--ink);
+      transition: all .2s
+    }
+
+    .theme-btn:hover {
+      background: var(--border)
+    }
+
+    .btn-sm {
+      padding: .45rem 1rem;
+      border-radius: 100px;
+      border: 1.5px solid var(--border-s);
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .btn-sm:hover {
+      border-color: var(--sage);
+      color: var(--sage)
+    }
+
+    .btn-primary {
+      padding: .55rem 1.25rem;
+      border-radius: 100px;
+      border: none;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .btn-primary:hover {
+      background: var(--sage)
+    }
+
+    /* PAGES */
+    .page {
+      display: none;
+      min-height: calc(100vh - var(--nav-h));
+      padding-top: var(--nav-h)
+    }
+
+    .page.active {
+      display: block
+    }
+
+    /* ── LANDING ── */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg)
+    }
+
+    .hero-image-block {
+      width: 100%;
+      margin: 0 0 4rem;
+      display: block;
+      line-height: 0;
+      font-size: 0
+    }
+
+    .hero-image-block img {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0;
+      padding: 0
+    }
+
+    .hero-inner {
+      padding: 4rem 2rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(74, 124, 89, .10) 0%, transparent 70%);
+      pointer-events: none
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--sage-l);
+      color: var(--sage);
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .35rem .9rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    .hero-pill::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--sage);
+      border-radius: 50%;
+      animation: pulse 2s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .4;
+        transform: scale(1.5)
+      }
+    }
+
+    .hero h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.08;
+      color: var(--ink);
+      margin-bottom: 1.25rem;
+      max-width: 800px
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--sage);
+      font-weight: 300
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 4rem
+    }
+
+    .hero-btn-p {
+      background: var(--ink);
+      color: var(--bg);
+      padding: .85rem 2.25rem;
+      border-radius: 100px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .hero-btn-p:hover {
+      background: var(--sage);
+      transform: translateY(-2px)
+    }
+
+    .hero-btn-s {
+      background: none;
+      color: var(--ink);
+      padding: .85rem 2.25rem;
+      border-radius: 100px;
+      border: 1.5px solid var(--border-s);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .hero-btn-s:hover {
+      border-color: var(--sage);
+      color: var(--sage)
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 2rem 4rem
+    }
+
+    .module-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-l);
+      padding: 2rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all .25s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .25s
+    }
+
+    .module-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow)
+    }
+
+    .module-card:hover::before {
+      opacity: 1
+    }
+
+    .mod-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem
+    }
+
+    .mod-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .4rem
+    }
+
+    .mod-desc {
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.6
+    }
+
+    .mod-arrow {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      transition: all .2s
+    }
+
+    .module-card:hover .mod-arrow {
+      background: var(--sage);
+      color: white
+    }
+
+    /* STATS */
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0
+    }
+
+    .stat-n {
+      font-family: 'Fraunces', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1
+    }
+
+    .stat-l {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: .2rem
+    }
+
+    /* ── COMMON ── */
+    .page-header {
+      padding: 2.5rem 3rem 0;
+      max-width: 1200px;
+      margin: 0 auto
+    }
+
+    .page-title {
+      font-family: 'Fraunces', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--ink);
+      margin-bottom: .3rem
+    }
+
+    .page-sub {
+      color: var(--muted);
+      font-size: .9rem
+    }
+
+    .page-body {
+      padding: 1.5rem 3rem 3rem;
+      max-width: 1200px;
+      margin: 0 auto
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      color: var(--muted);
+      font-size: .85rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: 1.5rem;
+      transition: color .2s
+    }
+
+    .back-btn:hover {
+      color: var(--sage)
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: .72rem;
+      font-weight: 600;
+      padding: .25rem .65rem;
+      border-radius: 100px
+    }
+
+    .b-sage {
+      background: var(--sage-l);
+      color: var(--sage)
+    }
+
+    .b-amber {
+      background: var(--amber-l);
+      color: var(--amber)
+    }
+
+    .b-coral {
+      background: var(--coral-l);
+      color: var(--coral)
+    }
+
+    .b-violet {
+      background: var(--violet-l);
+      color: var(--violet)
+    }
+
+    .b-teal {
+      background: var(--teal-l);
+      color: var(--teal)
+    }
+
+    .b-gray {
+      background: var(--border);
+      color: var(--muted)
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.5rem;
+      transition: all .2s
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow)
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem
+    }
+
+    /* AVATAR */
+    .av {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0
+    }
+
+    /* PROGRESS STEPS */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      padding-bottom: .5rem
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-shrink: 0
+    }
+
+    .step-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+      font-weight: 600;
+      border: 2px solid var(--border-s);
+      color: var(--muted);
+      transition: all .3s
+    }
+
+    .step-label {
+      font-size: .8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: color .3s
+    }
+
+    .step.done .step-num {
+      background: var(--sage);
+      border-color: var(--sage);
+      color: white
+    }
+
+    .step.done .step-label {
+      color: var(--sage)
+    }
+
+    .step.active .step-num {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--bg)
+    }
+
+    .step.active .step-label {
+      color: var(--ink);
+      font-weight: 600
+    }
+
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 .5rem;
+      min-width: 30px;
+      transition: background .3s
+    }
+
+    .step.done+.step-line {
+      background: var(--sage)
+    }
+
+    /* FORMS */
+    .form-group {
+      margin-bottom: 1rem
+    }
+
+    .form-label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--ink-m);
+      margin-bottom: .4rem
+    }
+
+    .form-input {
+      width: 100%;
+      padding: .65rem .9rem;
+      border: 1.5px solid var(--border-s);
+      border-radius: var(--r-s);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      color: var(--ink);
+      background: var(--card);
+      outline: none;
+      transition: border-color .2s
+    }
+
+    .form-input:focus {
+      border-color: var(--sage)
+    }
+
+    .form-input::placeholder {
+      color: var(--muted)
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237a7a7a' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .75rem center;
+      padding-right: 2rem
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 100px
+    }
+
+    /* TABS inside page */
+    .tab-bar {
+      display: flex;
+      gap: .25rem;
+      background: var(--border);
+      border-radius: 100px;
+      padding: 3px;
+      width: fit-content;
+      margin-bottom: 2rem
+    }
+
+    .tab-btn {
+      padding: .45rem 1.1rem;
+      border-radius: 100px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .83rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: none;
+      color: var(--muted);
+      transition: all .2s
+    }
+
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .1)
+    }
+
+    /* DIVIDER */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0
+    }
+
+    /* ── AUTH PAGE ── */
+    #auth-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - var(--nav-h));
+      padding: 2rem
+    }
+
+    .auth-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-l);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: var(--shadow)
+    }
+
+    .auth-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--ink), var(--sage));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin-bottom: .25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .auth-logo span {
+      color: var(--sage);
+      -webkit-text-fill-color: var(--sage);
+    }
+
+    .auth-tagline {
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+      margin-bottom: 2rem
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--bg);
+      border-radius: var(--r-s);
+      padding: 3px;
+      margin-bottom: 1.5rem
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: .5rem;
+      border: none;
+      background: none;
+      border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .875rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .2s
+    }
+
+    .auth-tab.active {
+      background: var(--card);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .1)
+    }
+
+    .auth-submit {
+      width: 100%;
+      padding: .75rem;
+      border-radius: 100px;
+      border: none;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: .5rem;
+      transition: background .2s
+    }
+
+    .auth-submit:hover {
+      background: var(--sage)
+    }
+
+    .auth-foot {
+      text-align: center;
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 1rem
+    }
+
+    .auth-link {
+      color: var(--sage);
+      cursor: pointer;
+      text-decoration: underline
+    }
+
+    /* ── SKILL EXCHANGE ── */
+    .skill-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem
+    }
+
+    .skill-listing {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      transition: all .2s;
+      cursor: pointer
+    }
+
+    .skill-listing:hover {
+      box-shadow: var(--shadow);
+      border-color: var(--sage)
+    }
+
+    .sl-info {
+      flex: 1
+    }
+
+    .sl-name {
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--ink)
+    }
+
+    .sl-detail {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .1rem
+    }
+
+    .sl-tags {
+      display: flex;
+      gap: .4rem;
+      margin-top: .5rem;
+      flex-wrap: wrap
+    }
+
+    .sl-actions {
+      display: flex;
+      gap: .5rem;
+      align-items: center
+    }
+
+    .match-bar {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .75rem;
+      color: var(--sage);
+      font-weight: 600;
+      background: var(--sage-l);
+      padding: .3rem .7rem;
+      border-radius: 100px
+    }
+
+    /* Workflow panel */
+    .workflow {
+      display: none
+    }
+
+    .workflow.active {
+      display: block
+    }
+
+    .wf-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 2rem;
+      margin-bottom: 1.5rem
+    }
+
+    .wf-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .5rem
+    }
+
+    .wf-sub {
+      color: var(--muted);
+      font-size: .88rem;
+      margin-bottom: 1.5rem
+    }
+
+    /* Status timeline */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0
+    }
+
+    .tl-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0
+    }
+
+    .tl-item+.tl-item {
+      border-top: 1px solid var(--border)
+    }
+
+    .tl-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+      margin-top: .15rem
+    }
+
+    .tl-dot.done {
+      background: var(--sage-l)
+    }
+
+    .tl-dot.active {
+      background: var(--amber-l);
+      animation: tlPulse 2s infinite
+    }
+
+    .tl-dot.wait {
+      background: var(--border);
+      color: var(--muted)
+    }
+
+    @keyframes tlPulse {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.08)
+      }
+    }
+
+    .tl-body {
+      flex: 1
+    }
+
+    .tl-t {
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--ink)
+    }
+
+    .tl-d {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .15rem
+    }
+
+    .tl-time {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: .3rem
+    }
+
+    /* ── FREELANCE ── */
+    .gig-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      transition: all .25s;
+      cursor: pointer
+    }
+
+    .gig-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow)
+    }
+
+    .gig-banner {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      position: relative
+    }
+
+    .gig-body {
+      padding: 1.25rem
+    }
+
+    .gig-seller {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .75rem
+    }
+
+    .gig-name {
+      font-size: .82rem;
+      color: var(--muted)
+    }
+
+    .gig-title {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.4;
+      margin-bottom: .6rem
+    }
+
+    .gig-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: .75rem;
+      border-top: 1px solid var(--border)
+    }
+
+    .gig-price {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    .gig-rating {
+      font-size: .75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: .3rem
+    }
+
+    /* GIG DETAIL */
+    .gig-detail {
+      display: none
+    }
+
+    .gig-detail.active {
+      display: block
+    }
+
+    .gig-detail-header {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap
+    }
+
+    .gig-detail-info {
+      flex: 1;
+      min-width: 280px
+    }
+
+    .gig-order-box {
+      width: 280px;
+      flex-shrink: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.5rem;
+      align-self: flex-start;
+      position: sticky;
+      top: 80px
+    }
+
+    /* PAYMENT */
+    .payment-page {
+      max-width: 640px;
+      margin: 0 auto
+    }
+
+    .payment-summary {
+      background: var(--sage-l);
+      border-radius: var(--r);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem
+    }
+
+    .pay-method {
+      display: flex;
+      gap: .75rem;
+      margin-bottom: 1rem
+    }
+
+    .pay-opt {
+      flex: 1;
+      border: 1.5px solid var(--border-s);
+      border-radius: var(--r-s);
+      padding: .75rem;
+      cursor: pointer;
+      text-align: center;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--ink);
+      transition: all .2s;
+      background: var(--card)
+    }
+
+    .pay-opt.selected {
+      border-color: var(--sage);
+      background: var(--sage-l);
+      color: var(--sage)
+    }
+
+    .pay-opt:hover {
+      border-color: var(--sage)
+    }
+
+    .pay-icon {
+      font-size: 1.4rem;
+      display: block;
+      margin-bottom: .25rem
+    }
+
+    /* ── COMMUNITY ── */
+    .post-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.25rem;
+      transition: all .2s
+    }
+
+    .post-card:hover {
+      box-shadow: var(--shadow)
+    }
+
+    .post-hdr {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .75rem
+    }
+
+    .post-meta-name {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .post-meta-info {
+      font-size: .73rem;
+      color: var(--muted)
+    }
+
+    .post-title {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .35rem;
+      line-height: 1.4
+    }
+
+    .post-body-text {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.65
+    }
+
+    .post-ftr {
+      display: flex;
+      gap: 1rem;
+      padding-top: .75rem;
+      border-top: 1px solid var(--border);
+      margin-top: .75rem
+    }
+
+    .post-act {
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .8rem;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      transition: color .2s;
+      padding: .25rem .5rem;
+      border-radius: var(--r-s)
+    }
+
+    .post-act:hover {
+      color: var(--sage);
+      background: var(--sage-l)
+    }
+
+    .compose-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem
+    }
+
+    .compose-input {
+      width: 100%;
+      border: none;
+      background: var(--bg);
+      border-radius: var(--r-s);
+      padding: .75rem 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      color: var(--ink);
+      resize: none;
+      outline: none
+    }
+
+    .compose-input::placeholder {
+      color: var(--muted)
+    }
+
+    .compose-ftr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: .75rem
+    }
+
+    .compose-types {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap
+    }
+
+    .type-sel {
+      padding: .3rem .7rem;
+      border-radius: 100px;
+      border: 1.5px solid var(--border-s);
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .75rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .2s
+    }
+
+    .type-sel.active {
+      background: var(--sage-l);
+      border-color: var(--sage);
+      color: var(--sage)
+    }
+
+    /* PROFILE */
+    .profile-page {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 2rem;
+      align-items: start
+    }
+
+    .profile-sidebar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-l);
+      padding: 2rem;
+      text-align: center;
+      position: sticky;
+      top: 80px
+    }
+
+    .profile-av-big {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--sage);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      margin: 0 auto 1rem
+    }
+
+    .profile-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    .profile-course {
+      font-size: .82rem;
+      color: var(--muted);
+      margin: .2rem 0 1rem
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .75rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border)
+    }
+
+    .p-stat-n {
+      font-family: 'Fraunces', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    .p-stat-l {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: .1rem
+    }
+
+    .skill-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      justify-content: center;
+      margin-top: 1rem
+    }
+
+    .skill-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: .3rem .75rem;
+      font-size: .75rem;
+      color: var(--ink-m)
+    }
+
+    /* NOTIFICATION BELL */
+    .notif-bell {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-s);
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: var(--ink);
+      transition: all .2s
+    }
+
+    .notif-bell:hover {
+      background: var(--border)
+    }
+
+    .notif-dot {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 8px;
+      height: 8px;
+      background: var(--coral);
+      border-radius: 50%;
+      border: 2px solid var(--bg)
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 800;
+      background: rgba(0, 0, 0, .5);
+      align-items: center;
+      justify-content: center;
+      padding: 1rem
+    }
+
+    .modal-overlay.open {
+      display: flex
+    }
+
+    .modal-box {
+      background: var(--card);
+      border-radius: var(--r-l);
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--border);
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--muted);
+      transition: background .2s
+    }
+
+    .modal-close:hover {
+      background: var(--border-s)
+    }
+
+    .modal-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .4rem
+    }
+
+    .modal-sub {
+      color: var(--muted);
+      font-size: .88rem;
+      margin-bottom: 1.5rem
+    }
+
+    /* RATING */
+    .stars {
+      display: flex;
+      gap: .25rem
+    }
+
+    .star-btn {
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--border-s);
+      transition: color .2s
+    }
+
+    .star-btn.lit,
+    .star-btn:hover~.star-btn {
+      color: var(--amber)
+    }
+
+    .star-btn:hover {
+      color: var(--amber)
+    }
+
+    /* SUCCESS animation */
+    .success-anim {
+      text-align: center;
+      padding: 2.5rem
+    }
+
+    .check-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--sage-l);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1.25rem;
+      animation: popIn .5s cubic-bezier(.17, .67, .4, 1.3)
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0)
+      }
+
+      to {
+        transform: scale(1)
+      }
+    }
+
+    .success-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .5rem
+    }
+
+    .success-sub {
+      color: var(--muted);
+      font-size: .9rem
+    }
+
+    /* MESSAGING */
+    .msg-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--r-l);
+      overflow: hidden;
+      height: calc(100vh - 200px);
+      min-height: 500px;
+      background: var(--card)
+    }
+
+    .msg-sidebar {
+      border-right: 1px solid var(--border);
+      overflow-y: auto
+    }
+
+    .msg-thread {
+      display: flex;
+      flex-direction: column
+    }
+
+    .msg-thread-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: .75rem
+    }
+
+    .msg-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem
+    }
+
+    .msg-input-area {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: .75rem
+    }
+
+    .msg-contact {
+      padding: .85rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      transition: background .15s;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .msg-contact:hover {
+      background: var(--bg)
+    }
+
+    .msg-contact.active {
+      background: var(--sage-l)
+    }
+
+    .msg-c-name {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .msg-c-prev {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: .1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: .6rem 1rem;
+      border-radius: var(--r);
+      font-size: .875rem;
+      line-height: 1.5
+    }
+
+    .bubble-them {
+      background: var(--bg);
+      color: var(--ink);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px
+    }
+
+    .bubble-me {
+      background: var(--ink);
+      color: var(--bg);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px
+    }
+
+    .msg-input {
+      flex: 1;
+      border: 1.5px solid var(--border-s);
+      border-radius: 100px;
+      padding: .5rem 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--ink);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s
+    }
+
+    .msg-input:focus {
+      border-color: var(--sage)
+    }
+
+    .msg-send {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: var(--ink);
+      color: var(--bg);
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background .2s;
+      flex-shrink: 0
+    }
+
+    .msg-send:hover {
+      background: var(--sage)
+    }
+
+    /* USER INDICATOR */
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .3rem .75rem;
+      border-radius: 100px;
+      background: var(--sage-l);
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--sage)
+    }
+
+    /* NOTES */
+    .note-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all .2s;
+      cursor: pointer
+    }
+
+    .note-card:hover {
+      box-shadow: var(--shadow)
+    }
+
+    .note-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--r-s);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0
+    }
+
+    .note-info {
+      flex: 1
+    }
+
+    .note-title {
+      font-size: .92rem;
+      font-weight: 600;
+      color: var(--ink)
+    }
+
+    .note-meta {
+      font-size: .77rem;
+      color: var(--muted);
+      margin-top: .15rem
+    }
+
+    .note-price {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    /* DARK overrides */
+    [data-theme="dark"] .form-input,
+    [data-theme="dark"] .compose-input,
+    [data-theme="dark"] .msg-input {
+      background: var(--surface);
+      border-color: var(--border-s);
+      color: var(--ink)
+    }
+
+    [data-theme="dark"] .pay-opt {
+      background: var(--surface)
+    }
+
+    [data-theme="dark"] .type-sel {
+      background: var(--surface)
+    }
+
+    /* Responsive */
+    @media(max-width:768px) {
+      .nav-tabs {
+        display: none
+      }
+
+      .page-header,
+      .page-body {
+        padding-left: 1rem;
+        padding-right: 1rem
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr
+      }
+
+      .profile-page {
+        grid-template-columns: 1fr
+      }
+
+      .msg-layout {
+        grid-template-columns: 1fr;
+        height: auto
+      }
+
+      .msg-sidebar {
+        display: none
+      }
+
+      .hero-stats {
+        gap: 1.5rem
+      }
+
+      .gig-detail-header {
+        flex-direction: column
+      }
+
+      .gig-order-box {
+        width: 100%
+      }
+
+      .form-row {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- NAV -->
+  <nav id="main-nav">
+    <a class="nav-logo" href="#" onclick="goPage('landing');return false">campus<span>.</span></a>
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" onclick="goPage('landing')">Home</button>
+      <button class="nav-tab" onclick="requireAuth('skill-exchange')">Skill Exchange</button>
+      <button class="nav-tab" onclick="requireAuth('freelance')">Freelance</button>
+      <button class="nav-tab" onclick="requireAuth('notes')">Notes</button>
+      <button class="nav-tab" onclick="requireAuth('community')">Community</button>
+      <button class="nav-tab" onclick="requireAuth('messages')">Messages</button>
+    </div>
+    <div class="nav-actions">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle dark mode">🌙</button>
+      <span id="nav-coins" class="user-badge" style="background:var(--amber-l);color:var(--amber);display:none"
+        title="Your CampusCoins balance">🪙 <span id="nav-coins-n">0</span> CC</span>
+      <button class="notif-bell" onclick="requireAuth('messages')" id="notif-btn"
+        style="display:none"><span>🔔</span><span class="notif-dot"></span></button>
+      <span id="nav-user" style="display:none"></span>
+      <button class="btn-sm" id="login-btn" onclick="goPage('auth')">Log In</button>
+      <button class="btn-primary" id="signup-btn" onclick="goPage('auth');switchAuthTab('signup')">Sign Up</button>
+      <button class="btn-sm" id="logout-btn" style="display:none" onclick="logout()">Log Out</button>
+      <button class="btn-primary" id="profile-btn" style="display:none" onclick="requireAuth('profile')">My
+        Profile</button>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════ LANDING ══════════════════════ -->
+  <div class="page active" id="page-landing">
+    <div class="hero">
+      <div class="hero-inner">
+        <span class="hero-pill">✦ Earn CampusCoins by learning & sharing</span>
+        <h1>Your campus is full of <em>untapped potential</em></h1>
+        <p class="hero-sub">Exchange skills, freelance for peers, share notes — and earn <strong
+            style="color:var(--amber)">CampusCoins</strong> with every action. No money. No payments. Just a thriving
+          learning economy.</p>
+        <div class="hero-btns">
+          <button class="hero-btn-p" onclick="goPage('auth');switchAuthTab('signup')">Get Started — 100 CC Free</button>
+          <button class="hero-btn-s" onclick="goPage('howitworks')">How CampusCoins Work</button>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-n">1,200+</div>
+            <div class="stat-l">Skills shared</div>
+          </div>
+          <div>
+            <div class="stat-n">340+</div>
+            <div class="stat-l">Active students</div>
+          </div>
+          <div>
+            <div class="stat-n">85k+</div>
+            <div class="stat-l">CampusCoins earned</div>
+          </div>
+          <div>
+            <div class="stat-n">98%</div>
+            <div class="stat-l">Satisfaction rate</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image-block">
+        <img src="/api/campus-hero" alt="Students collaborating on campus" loading="lazy" />
+      </div>
+    </div>
+    <div class="modules-grid">
+      <div class="module-card" onclick="requireAuth('skill-exchange')" style="border-top:3px solid var(--sage)">
+        <div class="mod-icon">🔄</div>
+        <div class="mod-title">Skill Exchange</div>
+        <div class="mod-desc">Trade what you know for what you want to learn. Peer-to-peer, zero cost.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+      <div class="module-card" onclick="requireAuth('freelance')" style="border-top:3px solid var(--amber)">
+        <div class="mod-icon">💼</div>
+        <div class="mod-title">Micro-Freelancing</div>
+        <div class="mod-desc">Offer or hire short-form campus services — design, tutoring, editing, and more.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+      <div class="module-card" onclick="requireAuth('notes')" style="border-top:3px solid var(--violet)">
+        <div class="mod-icon">📚</div>
+        <div class="mod-title">Notes Marketplace</div>
+        <div class="mod-desc">Share lecture notes, earn credits, and access quality study material.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+      <div class="module-card" onclick="requireAuth('community')" style="border-top:3px solid var(--coral)">
+        <div class="mod-icon">🌐</div>
+        <div class="mod-title">Community Feed</div>
+        <div class="mod-desc">Post requests, share opportunities, and connect with campus peers.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+      <div class="module-card" onclick="requireAuth('messages')" style="border-top:3px solid var(--teal)">
+        <div class="mod-icon">💬</div>
+        <div class="mod-title">Messages</div>
+        <div class="mod-desc">Chat with peers, negotiate terms, and coordinate collaborations.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+      <div class="module-card" onclick="requireAuth('profile')" style="border-top:3px solid var(--ink)">
+        <div class="mod-icon">⭐</div>
+        <div class="mod-title">My Profile</div>
+        <div class="mod-desc">Your campus identity — skills, reviews, gigs, exchanges, and reputation.</div>
+        <div class="mod-arrow">→</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ AUTH ══════════════════════ -->
+  <div class="page" id="page-auth">
+    <div id="auth-page">
+      <div class="auth-box">
+        <div class="auth-logo">campus<span>.</span></div>
+        <div class="auth-tagline">Your campus community platform</div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchAuthTab('login')">Log In</button>
+          <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+        </div>
+        <!-- LOGIN -->
+        <div id="auth-login">
+          <div id="g-btn-login" style="display:flex;justify-content:center;margin-bottom:.85rem"></div>
+          <div
+            style="display:flex;align-items:center;gap:.75rem;color:var(--muted);font-size:.75rem;margin:.5rem 0 1rem">
+            <div style="flex:1;height:1px;background:var(--border)"></div>OR<div
+              style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">College Email</label>
+            <input class="form-input" type="email" id="login-email" placeholder="you@university.edu">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" id="login-pass" placeholder="Your password">
+          </div>
+          <button class="auth-submit" onclick="doLogin()">Log In →</button>
+          <div class="auth-foot">
+            No account? <span class="auth-link" onclick="switchAuthTab('signup')">Sign up</span>
+          </div>
+        </div>
+        <!-- SIGNUP -->
+        <div id="auth-signup" style="display:none">
+          <div id="g-btn-signup" style="display:flex;justify-content:center;margin-bottom:.85rem"></div>
+          <div
+            style="display:flex;align-items:center;gap:.75rem;color:var(--muted);font-size:.75rem;margin:.5rem 0 1rem">
+            <div style="flex:1;height:1px;background:var(--border)"></div>OR<div
+              style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="su-fname"
+                placeholder="Rohan"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="su-lname"
+                placeholder="Kumar"></div>
+          </div>
+          <div class="form-group"><label class="form-label">College Email</label><input class="form-input" type="email"
+              id="su-email" placeholder="you@university.edu"></div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <select class="form-input form-select" id="su-dept">
+              <option value="">Select department…</option>
+              <option>Computer Science & Engineering</option>
+              <option>Design & Visual Communication</option>
+              <option>Economics & Commerce</option>
+              <option>Humanities & Social Sciences</option>
+              <option>Science & Mathematics</option>
+              <option>Media & Communication</option>
+              <option>Management & Business</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Year</label>
+            <select class="form-input form-select" id="su-year">
+              <option>1st Year</option>
+              <option>2nd Year</option>
+              <option selected>3rd Year</option>
+              <option>4th Year</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password"
+              id="su-pass" placeholder="Min 8 characters"></div>
+          <button class="auth-submit" onclick="doSignup()">Create My Profile →</button>
+          <div class="auth-foot">Already have an account? <span class="auth-link" onclick="switchAuthTab('login')">Log
+              in</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SKILL EXCHANGE ══════════════════════ -->
+  <div class="page" id="page-skill-exchange">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div class="page-title">🔄 Skill Exchange</div>
+          <div class="page-sub">Trade skills with campus peers — no money, just knowledge</div>
+        </div>
+        <button class="btn-primary" onclick="openModal('modal-post-skill')">+ Post a Skill</button>
+      </div>
+      <div style="margin-top:1.25rem">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchSkillTab('browse',this)">Browse Skills</button>
+          <button class="tab-btn" onclick="switchSkillTab('my-exchanges',this)">My Exchanges</button>
+          <button class="tab-btn" onclick="switchSkillTab('requests',this)">Requests</button>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <!-- BROWSE -->
+      <div id="skill-browse">
+        <div class="skill-flow" id="skill-listings"></div>
+      </div>
+      <!-- MY EXCHANGES -->
+      <div id="skill-my-exchanges" style="display:none">
+        <div id="skill-exchange-workflow"></div>
+      </div>
+      <!-- REQUESTS -->
+      <div id="skill-requests" style="display:none">
+        <div id="skill-request-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ FREELANCE ══════════════════════ -->
+  <div class="page" id="page-freelance">
+    <div id="freelance-browse-view">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+          <div>
+            <div class="page-title">💼 Micro-Freelancing</div>
+            <div class="page-sub">Campus services at student prices</div>
+          </div>
+          <button class="btn-primary" onclick="openModal('modal-post-gig')">+ Post a Gig</button>
+        </div>
+        <div style="margin-top:1.25rem">
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchFreelanceTab('all',this)">All Gigs</button>
+            <button class="tab-btn" onclick="switchFreelanceTab('design',this)">Design</button>
+            <button class="tab-btn" onclick="switchFreelanceTab('tutoring',this)">Tutoring</button>
+            <button class="tab-btn" onclick="switchFreelanceTab('writing',this)">Writing</button>
+            <button class="tab-btn" onclick="switchFreelanceTab('media',this)">Media</button>
+            <button class="tab-btn" onclick="switchFreelanceTab('my-gigs',this)">My Orders</button>
+          </div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="grid-3" id="gig-grid"></div>
+      </div>
+    </div>
+    <!-- GIG DETAIL -->
+    <div id="freelance-detail-view" style="display:none">
+      <div class="page-header">
+        <button class="back-btn" onclick="showFreelanceBrowse()">← Back to Gigs</button>
+      </div>
+      <div class="page-body">
+        <div class="gig-detail-header">
+          <div class="gig-detail-info" id="gig-detail-info"></div>
+          <div class="gig-order-box" id="gig-order-box"></div>
+        </div>
+        <div id="gig-order-flow" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ HOW IT WORKS ══════════════════════ -->
+  <div class="page" id="page-howitworks">
+    <div class="page-header">
+      <button class="back-btn" onclick="goPage('landing')">← Back to Home</button>
+      <div class="page-title">🪙 How CampusCoins Work</div>
+      <div class="page-sub">A campus-only learning economy — no real money, just earned credits</div>
+    </div>
+    <div class="page-body">
+      <div class="grid-3" style="margin-bottom:2rem">
+        <div class="card" style="border-top:3px solid var(--sage)">
+          <div style="font-size:2rem;margin-bottom:.5rem">🔄</div>
+          <div style="font-family:Fraunces,serif;font-size:1.1rem;font-weight:600;margin-bottom:.4rem">Skill Exchange
+          </div>
+          <div style="font-size:.85rem;color:var(--muted);line-height:1.6">Complete a skill swap session and both
+            partners earn <strong style="color:var(--amber)">+50 CC</strong>. Finish the full exchange? Bonus <strong
+              style="color:var(--amber)">+100 CC</strong>.</div>
+        </div>
+        <div class="card" style="border-top:3px solid var(--amber)">
+          <div style="font-size:2rem;margin-bottom:.5rem">💼</div>
+          <div style="font-family:Fraunces,serif;font-size:1.1rem;font-weight:600;margin-bottom:.4rem">Freelance Gigs
+          </div>
+          <div style="font-size:.85rem;color:var(--muted);line-height:1.6">Buyers spend coins, sellers earn them. Every
+            completed order delivers the gig price in <strong style="color:var(--amber)">CampusCoins</strong> straight
+            to the seller.</div>
+        </div>
+        <div class="card" style="border-top:3px solid var(--violet)">
+          <div style="font-size:2rem;margin-bottom:.5rem">📚</div>
+          <div style="font-family:Fraunces,serif;font-size:1.1rem;font-weight:600;margin-bottom:.4rem">Notes Marketplace
+          </div>
+          <div style="font-size:.85rem;color:var(--muted);line-height:1.6">Upload notes once, earn forever. Every
+            download pays the uploader. Sharing free notes earns <strong style="color:var(--amber)">+10 CC</strong>
+            goodwill bonus.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-family:Fraunces,serif;font-size:1.3rem;font-weight:700;margin-bottom:1rem">The full flow</div>
+        <div style="display:grid;gap:.75rem;font-size:.9rem;color:var(--ink-m);line-height:1.7">
+          <div>🎁 <strong>Sign up bonus:</strong> Get <strong style="color:var(--amber)">100 CC</strong> the moment you
+            create an account.</div>
+          <div>📤 <strong>Upload notes:</strong> Earn <strong style="color:var(--amber)">+10 CC</strong> instantly per
+            upload.</div>
+          <div>🤝 <strong>Complete a skill exchange step:</strong> +25 CC per session, +100 CC bonus on full completion.
+          </div>
+          <div>🚀 <strong>Deliver a freelance gig:</strong> Earn the full gig price in CC.</div>
+          <div>🛒 <strong>Spend CC:</strong> Buy gigs, paid notes, or unlock premium swaps — no real money ever changes
+            hands.</div>
+          <div>⭐ <strong>Reputation grows:</strong> Higher CC balance + 5★ reviews unlock more visibility on the
+            platform.</div>
+        </div>
+        <button class="btn-primary" style="margin-top:1.5rem" onclick="requireAuth('skill-exchange')">Start earning
+          →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ NOTES ══════════════════════ -->
+  <div class="page" id="page-notes">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div class="page-title">📚 Notes Marketplace</div>
+          <div class="page-sub">Share notes, earn credits, ace your exams</div>
+        </div>
+        <button class="btn-primary" onclick="openModal('modal-upload-notes')">+ Upload Notes</button>
+      </div>
+      <div style="margin-top:1.25rem">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchNotesTab('all',this)">All Notes</button>
+          <button class="tab-btn" onclick="switchNotesTab('my',this)">My Uploads</button>
+          <button class="tab-btn" onclick="switchNotesTab('purchased',this)">Purchased</button>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div id="notes-list" style="display:flex;flex-direction:column;gap:1rem"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ COMMUNITY ══════════════════════ -->
+  <div class="page" id="page-community">
+    <div class="page-header">
+      <div class="page-title">🌐 Community Feed</div>
+      <div class="page-sub">What's happening on campus right now</div>
+    </div>
+    <div class="page-body">
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start">
+        <div>
+          <div class="compose-box">
+            <div style="display:flex;gap:.75rem;align-items:flex-start">
+              <div class="av" id="compose-av" style="width:38px;height:38px;background:var(--sage);font-size:.85rem">?
+              </div>
+              <textarea class="compose-input" id="compose-text"
+                placeholder="Share a skill, post a request, or start a discussion…" rows="3"></textarea>
+            </div>
+            <div class="compose-ftr">
+              <div class="compose-types">
+                <button class="type-sel active" onclick="selType(this,'Skill Request')">🎯 Skill Request</button>
+                <button class="type-sel" onclick="selType(this,'Gig Offer')">💼 Gig Offer</button>
+                <button class="type-sel" onclick="selType(this,'Study Group')">📖 Study Group</button>
+                <button class="type-sel" onclick="selType(this,'Notes')">📋 Notes</button>
+              </div>
+              <button class="btn-primary" onclick="submitPost()"
+                style="font-size:.82rem;padding:.45rem 1rem">Post</button>
+            </div>
+          </div>
+          <div id="community-feed" style="display:flex;flex-direction:column;gap:1rem"></div>
+        </div>
+        <div style="position:sticky;top:80px">
+          <div class="card" style="margin-bottom:1rem">
+            <div
+              style="font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">
+              Trending Skills</div>
+            <div style="display:flex;flex-direction:column;gap:.4rem" id="trending-skills"></div>
+          </div>
+          <div class="card">
+            <div
+              style="font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">
+              Active Members</div>
+            <div style="display:flex;flex-direction:column;gap:.65rem" id="active-members"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ MESSAGES ══════════════════════ -->
+  <div class="page" id="page-messages">
+    <div class="page-header">
+      <div class="page-title">💬 Messages</div>
+      <div class="page-sub">Connect and coordinate with your campus network</div>
+    </div>
+    <div class="page-body">
+      <div class="msg-layout">
+        <div class="msg-sidebar" id="msg-sidebar"></div>
+        <div class="msg-thread" id="msg-thread">
+          <div class="msg-thread-header" id="msg-thread-header"></div>
+          <div class="msg-body" id="msg-body"></div>
+          <div class="msg-input-area">
+            <input class="msg-input" id="msg-input" placeholder="Type a message…"
+              onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="msg-send" onclick="sendMsg()">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ PROFILE ══════════════════════ -->
+  <div class="page" id="page-profile">
+    <div class="page-header">
+      <div class="page-title">⭐ My Profile</div>
+      <div class="page-sub">Your campus identity and reputation</div>
+    </div>
+    <div class="page-body">
+      <div class="profile-page">
+        <div class="profile-sidebar">
+          <div class="profile-av-big" id="profile-av-big"></div>
+          <div class="profile-name" id="profile-nm"></div>
+          <div class="profile-course" id="profile-dept"></div>
+          <div><span class="badge b-sage">✓ Verified Student</span></div>
+          <div class="profile-stats">
+            <div>
+              <div class="p-stat-n">12</div>
+              <div class="p-stat-l">Exchanges</div>
+            </div>
+            <div>
+              <div class="p-stat-n">4.9</div>
+              <div class="p-stat-l">Rating</div>
+            </div>
+            <div>
+              <div class="p-stat-n">3.2k</div>
+              <div class="p-stat-l">CC Earned</div>
+            </div>
+          </div>
+          <div class="skill-chips" id="profile-chips"></div>
+          <button class="btn-primary" style="width:100%;margin-top:1.25rem"
+            onclick="openModal('modal-edit-skills')">Edit Skills</button>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:1.25rem">
+            <div style="font-weight:600;margin-bottom:1rem">Active Exchanges</div>
+            <div id="profile-exchanges" style="display:flex;flex-direction:column;gap:.75rem"></div>
+          </div>
+          <div class="card" style="margin-bottom:1.25rem">
+            <div style="font-weight:600;margin-bottom:1rem">My Gigs</div>
+            <div id="profile-gigs" style="display:flex;flex-direction:column;gap:.75rem"></div>
+          </div>
+          <div class="card">
+            <div style="font-weight:600;margin-bottom:1rem">Reviews Received</div>
+            <div id="profile-reviews" style="display:flex;flex-direction:column;gap:.75rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ MODALS ══════════════════════ -->
+
+  <!-- Post Skill -->
+  <div class="modal-overlay" id="modal-post-skill">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-post-skill')">✕</button>
+      <div class="modal-title">Post a Skill</div>
+      <div class="modal-sub">What can you teach? What do you want to learn?</div>
+      <div class="form-group"><label class="form-label">I can teach…</label><input class="form-input" id="ps-teach"
+          placeholder="e.g. Python, UI Design, Guitar"></div>
+      <div class="form-group"><label class="form-label">I want to learn…</label><input class="form-input" id="ps-learn"
+          placeholder="e.g. Data Analysis, Video Editing"></div>
+      <div class="form-group"><label class="form-label">Availability</label>
+        <select class="form-input form-select" id="ps-avail">
+          <option>Weekday evenings</option>
+          <option>Weekend mornings</option>
+          <option>Flexible</option>
+          <option>Weekends only</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">About your skill (optional)</label><textarea class="form-input"
+          id="ps-about" placeholder="Share your experience level, teaching style…"></textarea></div>
+      <button class="auth-submit" onclick="postSkill()">Post Skill →</button>
+    </div>
+  </div>
+
+  <!-- Post Gig -->
+  <div class="modal-overlay" id="modal-post-gig">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-post-gig')">✕</button>
+      <div class="modal-title">Post a Gig</div>
+      <div class="modal-sub">Offer your skills as a paid service</div>
+      <div class="form-group"><label class="form-label">Gig Title</label><input class="form-input" id="pg-title"
+          placeholder="e.g. I'll design a logo for your club"></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-input form-select" id="pg-cat">
+          <option value="design">Design</option>
+          <option value="tutoring">Tutoring</option>
+          <option value="writing">Writing</option>
+          <option value="media">Media</option>
+          <option value="tech">Tech</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Price (🪙 CC)</label><input class="form-input" type="number"
+          id="pg-price" placeholder="600"></div>
+      <div class="form-group"><label class="form-label">Delivery Time</label>
+        <select class="form-input form-select" id="pg-delivery">
+          <option>1 day</option>
+          <option>2 days</option>
+          <option>3 days</option>
+          <option>1 week</option>
+          <option>2 weeks</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="pg-desc"
+          placeholder="Describe what you offer, your experience, what's included…"></textarea></div>
+      <button class="auth-submit" onclick="postGig()">Post Gig →</button>
+    </div>
+  </div>
+
+  <!-- Upload Notes -->
+  <div class="modal-overlay" id="modal-upload-notes">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-upload-notes')">✕</button>
+      <div class="modal-title">Upload Notes</div>
+      <div class="modal-sub">Share your knowledge and earn</div>
+      <div class="form-group"><label class="form-label">Subject / Course</label><input class="form-input"
+          id="un-subject" placeholder="e.g. Data Structures, Microeconomics"></div>
+      <div class="form-group"><label class="form-label">Semester / Year</label><select class="form-input form-select"
+          id="un-sem">
+          <option>Semester 1</option>
+          <option>Semester 2</option>
+          <option selected>Semester 3</option>
+          <option>Semester 4</option>
+          <option>Semester 5</option>
+          <option>Semester 6</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Price (🪙 CC) — 0 for free</label><input class="form-input"
+          type="number" id="un-price" placeholder="150"></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="un-desc"
+          placeholder="Topics covered, number of pages, quality notes…"></textarea></div>
+      <div
+        style="border:2px dashed var(--border-s);border-radius:var(--r-s);padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem;cursor:pointer;margin-bottom:1rem"
+        onclick="document.getElementById('real-file-input').click()">
+        <input type="file" id="real-file-input" style="display:none" onchange="handleFileSelect(event)">
+        <span id="upload-txt">📎 Click to upload PDF or images</span>
+      </div>
+      <button class="auth-submit" onclick="uploadNotes()">Upload Notes →</button>
+    </div>
+  </div>
+
+  <!-- Edit Skills -->
+  <div class="modal-overlay" id="modal-edit-skills">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-edit-skills')">✕</button>
+      <div class="modal-title">Edit Your Skills</div>
+      <div class="modal-sub">Add skills you have and skills you want to learn</div>
+      <div class="form-group"><label class="form-label">Skills I have (comma-separated)</label><input class="form-input"
+          id="es-have" placeholder="Python, UI Design, Photography"></div>
+      <div class="form-group"><label class="form-label">Skills I want to learn</label><input class="form-input"
+          id="es-want" placeholder="Data Science, Video Editing"></div>
+      <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="es-bio"
+          placeholder="Tell the campus community about yourself…"></textarea></div>
+      <button class="auth-submit" onclick="saveSkills()">Save Profile →</button>
+    </div>
+  </div>
+
+  <!-- Request Exchange -->
+  <div class="modal-overlay" id="modal-request-exchange">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-request-exchange')">✕</button>
+      <div class="modal-title">Request Skill Exchange</div>
+      <div class="modal-sub" id="rex-sub">Send a swap proposal</div>
+      <div class="form-group"><label class="form-label">What I'll teach in return</label><input class="form-input"
+          id="rex-offer" placeholder="I can teach you…"></div>
+      <div class="form-group"><label class="form-label">Sessions needed</label><select class="form-input form-select"
+          id="rex-sessions">
+          <option>1 session</option>
+          <option selected>2 sessions</option>
+          <option>3 sessions</option>
+          <option>4+ sessions</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="rex-msg"
+          placeholder="Introduce yourself and explain your interest…" rows="4"></textarea></div>
+      <button class="auth-submit" onclick="sendExchangeRequest()">Send Request →</button>
+    </div>
+  </div>
+
+  <!-- Rate & Review -->
+  <div class="modal-overlay" id="modal-review">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-review')">✕</button>
+      <div class="modal-title">Leave a Review</div>
+      <div class="modal-sub" id="review-sub">Rate your experience</div>
+      <div style="margin-bottom:1.25rem">
+        <label class="form-label">Overall Rating</label>
+        <div class="stars" id="star-row">
+          <button class="star-btn" onclick="setRating(1)">★</button>
+          <button class="star-btn" onclick="setRating(2)">★</button>
+          <button class="star-btn" onclick="setRating(3)">★</button>
+          <button class="star-btn" onclick="setRating(4)">★</button>
+          <button class="star-btn" onclick="setRating(5)">★</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Your review</label><textarea class="form-input" id="review-text"
+          placeholder="Share your experience…" rows="4"></textarea></div>
+      <button class="auth-submit" onclick="submitReview()">Submit Review →</button>
+    </div>
+  </div>
+
+  <script>
+    // ──────────────────────────────────────────
+    // STATE
+    // ──────────────────────────────────────────
+    let currentUser = null;
+    let currentPage = 'landing';
+    let selectedPaymentMethod = 'upi';
+    let currentRating = 0;
+    let currentGig = null;
+    let currentExchange = null;
+    let currentPostType = 'Skill Request';
+    let currentContact = 0;
+    let authRedirect = null;
+
+    const USERS = [];
+    function saveDB() {
+      if(typeof db === 'undefined') return;
+      db.collection('campusData').doc('communityPosts').set({items: communityPosts});
+      db.collection('campusData').doc('gigs').set({items: GIGS});
+      db.collection('campusData').doc('skills').set({items: SKILL_LISTINGS});
+      db.collection('campusData').doc('notes').set({items: NOTES});
+      db.collection('campusData').doc('messages').set({items: msgThreads});
+    }
+
+    let communityPosts = JSON.parse(localStorage.getItem('communityPosts')) || [
+      { id: 1, author: 'Priya Sharma', dept: 'Design, Yr 3', type: 'Skill Request', title: 'Looking for someone to teach Figma basics', body: 'I have 2 years of Python experience and happy to do a 1:1 swap. DM me!', av: 'PS', color: '#c4614a', time: '5 min ago', likes: 7, comments: 3 },
+      { id: 2, author: 'Rahul Verma', dept: 'CSE, Yr 4', type: 'Gig Offer', title: 'Python/DSA tutoring — 🪙 250 CC/hr', body: 'Helped 30+ juniors crack placements. Flexible timing, patient teaching style.', av: 'RV', color: '#5b4b8a', time: '1 hr ago', likes: 14, comments: 5 },
+      { id: 3, author: 'Asha Menon', dept: 'Economics, Yr 2', type: 'Study Group', title: 'Weekly Economics study circle — Thursdays 5pm', body: 'Room 204, Library. All years welcome. Bring your notes and doubts!', av: 'AM', color: '#2a7a7a', time: '3 hrs ago', likes: 22, comments: 8 },
+      { id: 4, author: 'Karan Patel', dept: 'Music, Yr 3', type: 'Notes', title: 'Music Theory notes Sems 1–4 uploaded', body: 'Complete handwritten + typed notes covering scales, harmony, and counterpoint. Free for skill swap.', av: 'KP', color: '#d4862a', time: 'Yesterday', likes: 38, comments: 12 },
+      { id: 5, author: 'Sneha Reddy', dept: 'Media, Yr 2', type: 'Skill Request', title: 'Need help with Adobe Premiere Pro', body: 'I can teach you advanced photography or Photoshop in return. Let me know!', av: 'SR', color: '#4a7c59', time: '2 days ago', likes: 12, comments: 4 },
+    ];
+
+    let GIGS = JSON.parse(localStorage.getItem('GIGS')) || [
+      { id: 1, emoji: '🎨', bannerBg: '#e8f0eb', title: "I'll create a minimal logo & brand kit for your club", seller: 'Priya S.', dept: 'Design, 3rd yr', avColor: '#c4614a', avInit: 'PS', price: 600, unit: 'logo', rating: 4.9, reviews: 23, delivery: '3 days', cat: 'design', desc: 'I specialise in clean, minimal branding for student clubs and campus projects. Includes logo, color palette, and typography guide. Delivered in Figma + PNG/SVG formats.' },
+      { id: 2, emoji: '📖', bannerBg: '#eeebf5', title: '1-on-1 Python & DSA tutoring for beginners to advanced', seller: 'Rahul V.', dept: 'CSE, 4th yr', avColor: '#5b4b8a', avInit: 'RV', price: 250, unit: 'hour', rating: 5.0, reviews: 41, delivery: 'Same day', cat: 'tutoring', desc: 'Personalized tutoring sessions covering Python fundamentals, OOP, and DSA. I adapt to your pace and track your progress. Ideal for placement prep.' },
+      { id: 3, emoji: '📸', bannerBg: '#fdf0e0', title: 'Event photography for fests, club meets & campus occasions', seller: 'Aditya S.', dept: 'Media, 2nd yr', avColor: '#d4862a', avInit: 'AS', price: 1200, unit: 'event', rating: 4.8, reviews: 17, delivery: '2 days', cat: 'media', desc: 'Professional event photography with fast delivery. I shoot with DSLR and edit in Lightroom. 50+ edited photos guaranteed for each event.' },
+      { id: 4, emoji: '✍️', bannerBg: '#faede9', title: 'Proofread & polish essays, reports and SOP drafts', seller: 'Neha G.', dept: 'English, 3rd yr', avColor: '#c4614a', avInit: 'NG', price: 200, unit: '1000 words', rating: 4.9, reviews: 31, delivery: '1 day', cat: 'writing', desc: 'Detailed proofreading with in-line comments and a full summary of changes. Specialise in SOPs, research papers, and academic essays.' },
+      { id: 5, emoji: '🎬', bannerBg: '#e4f4f4', title: 'Reels, event recaps & club promo videos — fast delivery', seller: 'Sneha R.', dept: 'Film, 2nd yr', avColor: '#2a7a7a', avInit: 'SR', price: 800, unit: 'reel', rating: 4.7, reviews: 12, delivery: '2 days', cat: 'media', desc: 'Short-form video editing for Instagram Reels and YouTube Shorts. I use Premiere Pro + After Effects. Motion graphics included.' },
+      { id: 6, emoji: '📋', bannerBg: '#e8f0eb', title: 'Comprehensive lecture notes for university courses', seller: 'Pooja I.', dept: 'Commerce, 4th yr', avColor: '#4a7c59', avInit: 'PI', price: 150, unit: 'subject', rating: 4.9, reviews: 58, delivery: 'Instant', cat: 'writing', desc: 'Well-structured, colour-coded notes for Commerce and Economics subjects. Covers full syllabus with exam tips and previous year Q&A.' },
+      { id: 7, emoji: '💻', bannerBg: '#eeebf5', title: 'Build your portfolio website or club landing page', seller: 'Karan P.', dept: 'CSE, 3rd yr', avColor: '#5b4b8a', avInit: 'KP', price: 1500, unit: 'project', rating: 4.8, reviews: 9, delivery: '5 days', cat: 'design', desc: 'Responsive websites using HTML/CSS/JS or React. Clean design, fast loading, mobile-friendly. Portfolio, landing page, or club site.' },
+      { id: 8, emoji: '🎵', bannerBg: '#fdf0e0', title: 'Guitar lessons for absolute beginners — patient teaching', seller: 'Kiran T.', dept: 'Music, 3rd yr', avColor: '#d4862a', avInit: 'KT', price: 300, unit: 'session', rating: 5.0, reviews: 19, delivery: 'Scheduled', cat: 'tutoring', desc: 'Learn chords, strumming patterns, and your first songs in just 4 sessions. I bring the patience, you bring the enthusiasm.' },
+      { id: 9, emoji: '📊', bannerBg: '#faede9', title: 'Excel dashboards, data analysis & visualization', seller: 'Anjali D.', dept: 'Economics, 2nd yr', avColor: '#2a7a7a', avInit: 'AD', price: 500, unit: 'project', rating: 4.7, reviews: 14, delivery: '3 days', cat: 'writing', desc: 'Turn your raw data into clear Excel dashboards and charts. Pivot tables, VLOOKUP, and data cleaning included.' },
+    ];
+
+    let SKILL_LISTINGS = JSON.parse(localStorage.getItem('SKILL_LISTINGS')) || [
+      { id: 1, name: 'Rahul Verma', dept: 'CSE, Yr 4', av: 'RV', color: '#5b4b8a', teach: 'Python & DSA', learn: 'UI/UX Design', avail: 'Weekday evenings', match: 96, bio: '4 years of competitive programming experience' },
+      { id: 2, name: 'Priya Sharma', dept: 'Design, Yr 3', av: 'PS', color: '#c4614a', teach: 'Figma & Branding', learn: 'Data Analysis', avail: 'Weekends', match: 88, bio: '2 years working with student clubs on branding' },
+      { id: 3, name: 'Asha Menon', dept: 'Economics, Yr 2', av: 'AM', color: '#2a7a7a', teach: 'Research & Writing', learn: 'Python', avail: 'Flexible', match: 82, bio: 'Published student researcher, clear teaching style' },
+      { id: 4, name: 'Vivek Sharma', dept: 'Music, Yr 3', av: 'VS', color: '#d4862a', teach: 'Guitar & Music Theory', learn: 'Video Editing', avail: 'Weekend mornings', match: 77, bio: 'Grade 8 guitarist, taught 10+ beginners' },
+      { id: 5, name: 'Sneha Reddy', dept: 'Film, Yr 2', av: 'SR', color: '#4a7c59', teach: 'Video Editing', learn: 'Photography', avail: 'Weekday evenings', match: 74, bio: 'YouTube creator with 5k subscribers' },
+      { id: 6, name: 'Karan Patel', dept: 'CSE, Yr 3', av: 'KP', color: '#5b4b8a', teach: 'Web Dev (React)', learn: 'Public Speaking', avail: 'Flexible', match: 70, bio: 'Freelanced 3 websites, loves clean code' },
+    ];
+
+    let NOTES = JSON.parse(localStorage.getItem('NOTES')) || [
+      { id: 1, subject: 'Data Structures & Algorithms', seller: 'Rahul V.', sem: 'Semester 3', icon: '📊', color: '#eeebf5', price: 120, downloads: 84, rating: 4.9, desc: 'Detailed PDF covering Arrays, Trees, Graphs, and DP with visual examples.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+      { id: 2, subject: 'Microeconomics — Complete Notes', seller: 'Asha M.', sem: 'Semester 2', icon: '📈', color: '#e4f4f4', price: 0, downloads: 213, rating: 4.8, desc: 'Handwritten scanned PDF for Semester 2 Microeconomics.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+      { id: 3, subject: 'Music Theory Sems 1–4', seller: 'Vivek S.', sem: 'Semester 4', icon: '🎵', color: '#fdf0e0', price: 80, downloads: 47, rating: 5.0, desc: 'Complete music theory guide including scales, harmony, and composition rules.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+      { id: 4, subject: 'Graphic Design Principles', seller: 'Priya S.', sem: 'Semester 2', icon: '🎨', color: '#e8f0eb', price: 100, downloads: 62, rating: 4.7, desc: 'A beautiful slide deck detailing color theory, typography, and spacing.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+      { id: 5, subject: 'Corporate Finance — MBA', seller: 'Neha G.', sem: 'Semester 5', icon: '💰', color: '#faede9', price: 150, downloads: 38, rating: 4.9, desc: 'Complete textbook summary with all essential finance formulas.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+      { id: 6, subject: 'Machine Learning Basics', seller: 'Karan P.', sem: 'Semester 6', icon: '🤖', color: '#eeebf5', price: 200, downloads: 91, rating: 4.8, desc: 'Jupyter notebook exported to PDF. Regression, Classification, and Neural Networks.', fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+    ];
+
+    const MESSAGES = [
+      {
+        id: 1, name: 'Priya Sharma', av: 'PS', color: '#c4614a', preview: 'Sure! When are you free?', unread: 2, thread: [
+          { me: false, text: "Hi! I saw your Python skill listing. I'd love to do a swap — I can teach Figma!", time: '10:30 AM' },
+          { me: true, text: "That sounds perfect! I've been wanting to learn Figma for my portfolio.", time: '10:45 AM' },
+          { me: false, text: 'Sure! When are you free? I\'m available this Thursday evening.', time: '11:00 AM' },
+        ]
+      },
+      {
+        id: 2, name: 'Rahul Verma', av: 'RV', color: '#5b4b8a', preview: 'Payment confirmed ✓', unread: 0, thread: [
+          { me: true, text: "Hey Rahul, I placed an order for your Python tutoring gig.", time: 'Yesterday' },
+          { me: false, text: "Great! I'll confirm the session for Saturday 3pm. Payment confirmed ✓", time: 'Yesterday' },
+          { me: false, text: "See you then! Please install VS Code and Python before the session.", time: 'Yesterday' },
+        ]
+      },
+      {
+        id: 3, name: 'Vivek Sharma', av: 'VS', color: '#d4862a', preview: 'See you Saturday!', unread: 1, thread: [
+          { me: false, text: "Your Music Theory notes order is ready for download.", time: '2 days ago' },
+          { me: true, text: "Thanks! The notes are really well-organized. Can I ask a follow-up question?", time: '2 days ago' },
+          { me: false, text: 'Of course! See you Saturday at the jam session too!', time: '2 days ago' },
+        ]
+      },
+    ];
+
+    let currentExchangeStep = 0;
+    let myExchanges = [];
+    let myOrders = [];
+    let communityLikes = {};
+    let msgThreads = JSON.parse(JSON.stringify(MESSAGES));
+    let userSkills = ['Python', 'React', 'Photography'];
+
+    // ──────────────────────────────────────────
+    // UTILITIES
+    // ──────────────────────────────────────────
+    function toast(msg, dur = 3000) {
+      const t = document.getElementById('toast');
+      const d = document.createElement('div');
+      d.className = 'toast-msg'; d.textContent = msg; t.appendChild(d);
+      setTimeout(() => { d.style.opacity = '0'; d.style.transform = 'translateY(10px)'; d.style.transition = 'all .3s'; setTimeout(() => d.remove(), 300) }, dur);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open') }
+    function closeModal(id) { document.getElementById(id).classList.remove('open') }
+
+    function goPage(pg) {
+      const authPages = ['skill-exchange', 'freelance', 'notes', 'community', 'messages', 'profile'];
+      if (authPages.includes(pg) && !currentUser) {
+        authRedirect = pg;
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-auth').classList.add('active');
+        currentPage = 'auth';
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        setTimeout(renderGoogleButtons, 50);
+        return;
+      }
+
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + pg).classList.add('active');
+      currentPage = pg;
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      const map = { landing: 0, 'skill-exchange': 1, freelance: 2, notes: 3, community: 4, messages: 5 };
+      const tabs = document.querySelectorAll('.nav-tab');
+      if (map[pg] !== undefined && tabs[map[pg]]) tabs[map[pg]].classList.add('active');
+      window.scrollTo(0, 0);
+      if (pg === 'skill-exchange') renderSkillListings();
+      if (pg === 'freelance') renderGigGrid('all');
+      if (pg === 'notes') renderNotes('all');
+      if (pg === 'community') renderCommunity();
+      if (pg === 'messages') renderMessages();
+      if (pg === 'profile') renderProfile();
+      if (pg === 'auth') setTimeout(renderGoogleButtons, 50);
+    }
+
+    function requireAuth(pg) {
+      if (!currentUser) { authRedirect = pg; goPage('auth'); return false }
+      goPage(pg); return true;
+    }
+
+    function toggleTheme() {
+      const h = document.documentElement;
+      const dark = h.getAttribute('data-theme') === 'dark';
+      h.setAttribute('data-theme', dark ? 'light' : 'dark');
+      document.getElementById('theme-btn').textContent = dark ? '🌙' : '☀️';
+    }
+
+    // ──────────────────────────────────────────
+    // AUTH
+    // ──────────────────────────────────────────
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-tab')[tab === 'login' ? 0 : 1].classList.add('active');
+      document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('auth-signup').style.display = tab === 'signup' ? 'block' : 'none';
+    }
+
+    function saveUsers() {
+      if(typeof db !== 'undefined') db.collection('campusData').doc('users').set({items: USERS});
+      if (currentUser) localStorage.setItem('campus_current', currentUser.email);
+      else localStorage.removeItem('campus_current');
+    }
+    function loadUsers() {
+      // Cloud listeners
+      if(typeof db !== 'undefined') {
+        db.collection('campusData').doc('users').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { 
+             USERS.length = 0; USERS.push(...doc.data().items); 
+             const cur = localStorage.getItem('campus_current');
+             if (cur) { const u = USERS.find(x => x.email === cur); if (u && !currentUser) setUser(u, true); }
+             updateCoinUI();
+          }
+        });
+        db.collection('campusData').doc('communityPosts').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { communityPosts = doc.data().items; if(currentPage==='community') renderCommunity(); }
+        });
+        db.collection('campusData').doc('gigs').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { GIGS = doc.data().items; if(currentPage==='freelance') renderGigGrid('all'); }
+        });
+        db.collection('campusData').doc('skills').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { SKILL_LISTINGS = doc.data().items; if(currentPage==='skill-exchange') renderSkillListings(); }
+        });
+        db.collection('campusData').doc('notes').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { NOTES = doc.data().items; if(currentPage==='notes') renderNotes('all'); }
+        });
+        db.collection('campusData').doc('messages').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { msgThreads = doc.data().items; if(currentPage==='messages') renderMessages(); }
+        });
+      }
+    }
+
+    function doLogin() {
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const pass = document.getElementById('login-pass').value.trim();
+      if (!email || !pass) { toast('⚠️ Please fill in all fields'); return }
+      if (!email.includes('@')) { toast('⚠️ Enter a valid email'); return }
+      
+      auth.signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+          let existing = USERS.find(u => u.email === email);
+          if (!existing) {
+             const name = email.split('@')[0];
+             existing = { email, pass: '', name: name.charAt(0).toUpperCase() + name.slice(1), fname: name, lname: '', dept: 'Campus Student', year: 'Student', initials: name.slice(0, 2).toUpperCase(), color: randomColor(), coins: 100 };
+             USERS.push(existing);
+          }
+          setUser(existing);
+        })
+        .catch((error) => {
+          if (error.code === 'auth/invalid-credential') {
+             toast('⚠️ Incorrect email or password');
+          } else {
+             toast('⚠️ ' + error.message.replace('Firebase:', '').trim());
+          }
+        });
+    }
+
+    function doSignup() {
+      const fname = document.getElementById('su-fname').value.trim();
+      const lname = document.getElementById('su-lname').value.trim();
+      const email = document.getElementById('su-email').value.trim().toLowerCase();
+      const dept = document.getElementById('su-dept').value;
+      const year = document.getElementById('su-year').value;
+      const pass = document.getElementById('su-pass').value.trim();
+      if (!fname || !email || !dept || !pass) { toast('⚠️ Please fill in all required fields'); return }
+      if (!email.includes('@')) { toast('⚠️ Enter a valid college email'); return }
+      if (pass.length < 6) { toast('⚠️ Password must be at least 6 characters'); return }
+      
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+          const u = { email, pass: '', name: fname + (lname ? ' ' + lname : ''), fname, lname, dept, year, initials: (fname[0] + (lname ? lname[0] : fname[1] || '')).toUpperCase(), color: randomColor(), coins: 100 };
+          USERS.push(u);
+          setUser(u);
+          if (userCredential.user) {
+            userCredential.user.updateProfile({ displayName: u.name }).catch(console.error);
+          }
+          setTimeout(() => toast('🎁 Welcome bonus: +100 CampusCoins!'), 600);
+        })
+        .catch((error) => {
+          if (error.code === 'auth/email-already-in-use') {
+            toast('⚠️ Account already exists — try logging in.');
+          } else {
+            toast('⚠️ ' + error.message.replace('Firebase:', '').trim());
+          }
+        });
+    }
+
+    /* ============ REAL GOOGLE SIGN-IN (FIREBASE) ============ */
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2VBy-IQp11U3tk205Ep_VJhqaAqr4zTY",
+      authDomain: "campus-platform-04.firebaseapp.com",
+      projectId: "campus-platform-04",
+      storageBucket: "campus-platform-04.firebasestorage.app",
+      messagingSenderId: "904037520232",
+      appId: "1:904037520232:web:fb0b3e39fa0dc3edf97cdd"
+    };
+
+    function loadUsers() {
+      // Cloud listeners
+      if(typeof db !== 'undefined') {
+        db.collection('campusData').doc('users').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { 
+             USERS.length = 0; USERS.push(...doc.data().items); 
+             const cur = localStorage.getItem('campus_current');
+             if (cur) { const u = USERS.find(x => x.email === cur); if (u && !currentUser) setUser(u, true); }
+             updateCoinUI();
+          }
+        });
+        db.collection('campusData').doc('communityPosts').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { communityPosts = doc.data().items; if(currentPage==='community') renderCommunity(); }
+        });
+        db.collection('campusData').doc('gigs').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { GIGS = doc.data().items; if(currentPage==='freelance') renderGigGrid('all'); }
+        });
+        db.collection('campusData').doc('skills').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { SKILL_LISTINGS = doc.data().items; if(currentPage==='skill-exchange') renderSkillListings(); }
+        });
+        db.collection('campusData').doc('notes').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { NOTES = doc.data().items; if(currentPage==='notes') renderNotes('all'); }
+        });
+        db.collection('campusData').doc('messages').onSnapshot(doc => {
+          if(doc.exists && doc.data().items) { msgThreads = doc.data().items; if(currentPage==='messages') renderMessages(); }
+        });
+      }
+    }
+
+    // Initialize Firebase
+    if(!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    loadUsers();
+
+    function realGoogleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          const user = result.user;
+          const email = user.email.toLowerCase();
+          const fname = user.displayName ? user.displayName.split(' ')[0] : 'Student';
+          const lname = user.displayName ? user.displayName.split(' ').slice(1).join(' ') : '';
+          const fullName = user.displayName || 'Campus Student';
+
+          const existing = USERS.find(u => u.email === email);
+          if(existing) { 
+            setUser(existing); 
+            return; 
+          }
+          
+          const u = { 
+            email: email, 
+            pass: '', 
+            name: fullName, 
+            fname: fname, 
+            lname: lname,
+            dept: 'Campus Student', 
+            year: 'Student',
+            initials: ((fname[0]||'S')+(lname[0]||fname[1]||'')).toUpperCase(),
+            color: randomColor(), 
+            coins: 100, 
+            google: true, 
+            picture: user.photoURL || '' 
+          };
+          
+          USERS.push(u); 
+          setUser(u);
+          setTimeout(() => toast('🎁 Welcome bonus: +100 CampusCoins!'), 600);
+        })
+        .catch((error) => {
+          console.error(error);
+          if (error.code !== 'auth/popup-closed-by-user') {
+            toast('⚠️ Google Sign-In failed: ' + error.message);
+          }
+        });
+    }
+
+    function renderGoogleButtons(){
+      const targets = ['g-btn-login','g-btn-signup'];
+      targets.forEach(id=>{
+        const el=document.getElementById(id); if(!el) return;
+        el.innerHTML = `<button type="button" onclick="realGoogleLogin()" style="display:inline-flex;align-items:center;gap:.6rem;padding:.7rem 1.4rem;border-radius:100px;border:1.5px solid var(--border-s);background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;transition:all .2s">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.3 29 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.8 19 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.3 29 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/><path fill="#4CAF50" d="M24 43.5c5 0 9.5-1.7 13-4.6l-6-5.1c-2 1.4-4.4 2.2-7 2.2-5.3 0-9.7-3.1-11.3-7.5l-6.6 5.1C9.6 39 16.2 43.5 24 43.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6 5.1c-.4.4 6.7-4.9 6.7-14.6 0-1.2-.1-2.4-.4-3.5z"/></svg>
+          Continue with Google
+        </button>`;
+      });
+    }
+
+    function setUser(u, silent) {
+      currentUser = u;
+      if (typeof u.coins !== 'number') u.coins = 100;
+
+      // Daily Login Bonus
+      const today = new Date().toDateString();
+      let gotDaily = false;
+      if (u.lastLoginDate !== today) {
+        u.lastLoginDate = today;
+        u.coins += 20;
+        gotDaily = true;
+      }
+
+      saveUsers();
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('signup-btn').style.display = 'none';
+      document.getElementById('logout-btn').style.display = '';
+      document.getElementById('profile-btn').style.display = '';
+      document.getElementById('notif-btn').style.display = '';
+      const nb = document.getElementById('nav-user');
+      nb.style.display = '';
+      nb.innerHTML = `<span class="user-badge"><span style="width:22px;height:22px;border-radius:50%;background:${u.color};display:inline-flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:white">${u.initials}</span>${u.fname || u.name}</span>`;
+      document.getElementById('compose-av').textContent = u.initials;
+      document.getElementById('compose-av').style.background = u.color;
+      document.getElementById('profile-av-big').textContent = u.initials;
+      document.getElementById('profile-av-big').style.background = u.color;
+      updateCoinUI();
+      if (!silent) toast(`👋 Welcome, ${u.fname || u.name}!`);
+      if (gotDaily && !silent) setTimeout(() => toast('🎁 Daily Login Bonus: +20 CampusCoins!'), 1500);
+
+      if (authRedirect) { const d = authRedirect; authRedirect = null; goPage(d) }
+      else if (!silent) goPage('landing');
+    }
+
+    function logout() {
+      if (typeof auth !== 'undefined') auth.signOut().catch(console.error);
+      currentUser = null;
+      saveUsers();
+      document.getElementById('login-btn').style.display = '';
+      document.getElementById('signup-btn').style.display = '';
+      document.getElementById('logout-btn').style.display = 'none';
+      document.getElementById('profile-btn').style.display = 'none';
+      document.getElementById('notif-btn').style.display = 'none';
+      document.getElementById('nav-user').style.display = 'none';
+      document.getElementById('nav-coins').style.display = 'none';
+      toast('👋 Logged out successfully');
+      goPage('landing');
+    }
+
+    function randomColor() { const c = ['#4a7c59', '#5b4b8a', '#c4614a', '#2a7a7a', '#d4862a']; return c[Math.floor(Math.random() * c.length)] }
+
+    // ──────────────────────────────────────────
+    // SKILL EXCHANGE
+    // ──────────────────────────────────────────
+    function switchSkillTab(tab, btn) {
+      document.querySelectorAll('#page-skill-exchange .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('skill-browse').style.display = tab === 'browse' ? 'block' : 'none';
+      document.getElementById('skill-my-exchanges').style.display = tab === 'my-exchanges' ? 'block' : 'none';
+      document.getElementById('skill-requests').style.display = tab === 'requests' ? 'block' : 'none';
+      if (tab === 'my-exchanges') renderMyExchanges();
+      if (tab === 'requests') renderRequests();
+    }
+
+    function renderSkillListings() {
+      const c = document.getElementById('skill-listings');
+      c.innerHTML = SKILL_LISTINGS.map(s => `
+    <div class="skill-listing">
+      <div class="av" style="width:48px;height:48px;background:${s.color};font-size:.9rem">${s.av}</div>
+      <div class="sl-info">
+        <div class="sl-name">${s.name}</div>
+        <div class="sl-detail">${s.dept} · ${s.avail}</div>
+        <div class="sl-tags">
+          <span class="badge b-sage">Teaches: ${s.teach}</span>
+          <span class="badge b-amber">Wants: ${s.learn}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.35rem;font-style:italic">"${s.bio}"</div>
+      </div>
+      <div class="sl-actions">
+        <div class="match-bar">⚡ ${s.match}% match</div>
+        <div style="font-size:.75rem; color:var(--amber); font-weight:600; background:var(--amber-l); padding:.3rem .7rem; border-radius:100px;" title="Earn +150 CC on full completion">🪙 Earn +150 CC</div>
+        <button class="btn-primary" style="font-size:.8rem;padding:.45rem 1rem" onclick="openExchangeRequest(${s.id})">Request Swap</button>
+        <button class="btn-sm" style="font-size:.8rem" onclick="openDirectMsg('${s.name}','${s.av}','${s.color}')">Message</button>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function openExchangeRequest(id) {
+      const s = SKILL_LISTINGS.find(x => x.id === id);
+      document.getElementById('rex-sub').textContent = `Propose a swap with ${s.name} (${s.teach} ↔ your skill)`;
+      currentExchange = { type: 'skill', partner: s, step: 0 };
+      openModal('modal-request-exchange');
+    }
+
+    function sendExchangeRequest() {
+      const offer = document.getElementById('rex-offer').value.trim();
+      const msg = document.getElementById('rex-msg').value.trim();
+      if (!offer) { toast('⚠️ Please enter what you\'ll teach in return'); return }
+      closeModal('modal-request-exchange');
+      if (currentExchange) {
+        myExchanges.push({
+          id: Date.now(), partner: currentExchange.partner.name, av: currentExchange.partner.av,
+          color: currentExchange.partner.color, teach: offer, learn: currentExchange.partner.teach,
+          step: 1, status: 'Pending Confirmation', steps: ['Request Sent', 'Partner Confirmed', 'Session 1', 'Session 2', 'Complete']
+        });
+      }
+      toast(`✅ Swap request sent! ${currentExchange?.partner?.name || 'Partner'} will review it.`);
+      addMsgThread(currentExchange?.partner?.name || 'Partner', currentExchange?.partner?.av || '??', currentExchange?.partner?.color || '#4a7c59', `Hi! I'd love to swap skills — I can teach ${offer}`);
+    }
+
+    function renderMyExchanges() {
+      const c = document.getElementById('skill-exchange-workflow');
+      if (!myExchanges.length) {
+        c.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:1rem">🔄</div><div style="font-family:Fraunces,serif;font-size:1.2rem;color:var(--ink);margin-bottom:.5rem">No active exchanges yet</div><p>Browse skills and send your first swap request!</p><button class="btn-primary" style="margin-top:1rem" onclick="switchSkillTab('browse',document.querySelectorAll('#page-skill-exchange .tab-btn')[0])">Browse Skills</button></div>`;
+        return;
+      }
+      c.innerHTML = myExchanges.map(ex => `
+    <div class="wf-card">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem">
+        <div class="av" style="width:44px;height:44px;background:${ex.color};font-size:.85rem">${ex.av}</div>
+        <div>
+          <div style="font-weight:600;color:var(--ink)">${ex.partner}</div>
+          <div style="font-size:.78rem;color:var(--muted)">You teach: ${ex.teach} · They teach: ${ex.learn}</div>
+        </div>
+        <span class="badge ${ex.step >= 4 ? 'b-sage' : ex.step >= 2 ? 'b-amber' : 'b-gray'}" style="margin-left:auto">${ex.status}</span>
+      </div>
+      <div class="steps">
+        ${ex.steps.map((s, i) => `
+          <div class="step ${i < ex.step ? 'done' : i === ex.step ? 'active' : ''}">
+            <div class="step-num">${i < ex.step ? '✓' : i + 1}</div>
+            <div class="step-label">${s}</div>
+          </div>
+          ${i < ex.steps.length - 1 ? `<div class="step-line"></div>` : ''}
+        `).join('')}
+      </div>
+      ${ex.step < ex.steps.length - 1 ? `<div style="display:flex;gap:.75rem;margin-top:1rem">
+        <button class="btn-primary" style="font-size:.82rem" onclick="advanceExchange(${ex.id})">
+          ${ex.step === 0 ? 'Waiting for confirmation…' : ex.step === 1 ? 'Mark Session 1 Complete' : ex.step === 2 ? 'Mark Session 2 Complete' : 'Complete Exchange'}
+        </button>
+        <button class="btn-sm" style="font-size:.82rem" onclick="openDirectMsg('${ex.partner}','${ex.av}','${ex.color}')">Message ${ex.partner.split(' ')[0]}</button>
+      </div>`: `<div style="margin-top:1rem"><button class="btn-sm" onclick="openRateModal('${ex.partner}')">⭐ Leave Review</button></div>`}
+    </div>
+  `).join('');
+    }
+
+    function advanceExchange(id) {
+      const ex = myExchanges.find(x => x.id === id);
+      if (!ex) return;
+      if (ex.step === 0) { toast('⏳ Waiting for partner confirmation…'); return }
+      ex.step++;
+      const statuses = ['Pending Confirmation', 'Confirmed — Session pending', 'Session 1 done', 'Session 2 done', 'Exchange Complete!'];
+      ex.status = statuses[ex.step] || 'Complete';
+      if (ex.step >= ex.steps.length - 1) {
+        toast('🎉 Exchange complete! Don\'t forget to leave a review.');
+        earnCoins(100, 'Skill exchange completed');
+        openRateModal(ex.partner);
+      } else {
+        toast(`✅ Step marked complete! Next: ${ex.steps[ex.step]}`);
+        earnCoins(25, `Session step: ${ex.steps[ex.step - 1]}`);
+      }
+      renderMyExchanges();
+    }
+
+    function renderRequests() {
+      const c = document.getElementById('skill-request-list');
+      const reqs = [
+        { name: 'Sara Joshi', av: 'SJ', color: '#4a7c59', wants: 'Python help', offers: 'Video Editing', time: 'Just now' },
+        { name: 'Dev Patel', av: 'DP', color: '#5b4b8a', wants: 'UI Design basics', offers: 'Web Dev (React)', time: '2 hrs ago' },
+      ];
+      c.innerHTML = `<div style="margin-bottom:1rem;color:var(--muted);font-size:.88rem">Students looking to swap with you based on your skills (${userSkills.join(', ')})</div>` +
+        reqs.map(r => `
+    <div class="skill-listing" style="margin-bottom:.75rem">
+      <div class="av" style="width:44px;height:44px;background:${r.color};font-size:.85rem">${r.av}</div>
+      <div class="sl-info">
+        <div class="sl-name">${r.name}</div>
+        <div class="sl-detail">${r.time}</div>
+        <div class="sl-tags"><span class="badge b-coral">Wants: ${r.wants}</span><span class="badge b-sage">Offers: ${r.offers}</span></div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-primary" style="font-size:.8rem;padding:.45rem 1rem" onclick="acceptRequest('${r.name}','${r.av}','${r.color}','${r.offers}','${r.wants}')">Accept</button>
+        <button class="btn-sm" style="font-size:.8rem" onclick="openDirectMsg('${r.name}','${r.av}','${r.color}')">Message</button>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function acceptRequest(name, av, color, offers, wants) {
+      myExchanges.push({
+        id: Date.now(), partner: name, av, color, teach: wants, learn: offers, step: 2,
+        status: 'Confirmed — Session pending', steps: ['Request Sent', 'Partner Confirmed', 'Session 1', 'Session 2', 'Complete']
+      });
+      toast(`✅ Accepted! Exchange with ${name} is now active.`);
+      switchSkillTab('my-exchanges', document.querySelectorAll('#page-skill-exchange .tab-btn')[1]);
+    }
+
+    function postSkill() {
+      const teach = document.getElementById('ps-teach').value.trim();
+      const learn = document.getElementById('ps-learn').value.trim();
+      if (!teach || !learn) { toast('⚠️ Please fill both fields'); return }
+      closeModal('modal-post-skill');
+      const newSkill = { id: Date.now(), name: currentUser.name, dept: currentUser.dept + ', ' + currentUser.year, av: currentUser.initials, color: currentUser.color, teach, learn, avail: document.getElementById('ps-avail').value, match: 99, bio: 'New listing' };
+      SKILL_LISTINGS.unshift(newSkill);
+      userSkills.push(teach);
+      renderSkillListings();
+      earnCoins(15, 'Posted a skill listing');
+      toast(`✅ Skill posted! Others can now request to swap "${teach}" with you.`);
+    }
+
+    // ──────────────────────────────────────────
+    // FREELANCE
+    // ──────────────────────────────────────────
+    function switchFreelanceTab(cat, btn) {
+      document.querySelectorAll('#page-freelance .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (cat === 'my-gigs') { renderMyOrders(); return }
+      renderGigGrid(cat);
+    }
+
+    function renderGigGrid(cat) {
+      document.getElementById('freelance-browse-view').style.display = '';
+      document.getElementById('freelance-detail-view').style.display = 'none';
+      const filtered = cat === 'all' ? GIGS : GIGS.filter(g => g.cat === cat);
+      const c = document.getElementById('gig-grid');
+      c.innerHTML = filtered.map(g => `
+    <div class="gig-card" onclick="openGigDetail(${g.id})">
+      <div class="gig-banner" style="background:${g.bannerBg}">${g.emoji}</div>
+      <div class="gig-body">
+        <div class="gig-seller">
+          <div class="av" style="width:26px;height:26px;background:${g.avColor};font-size:.6rem">${g.avInit}</div>
+          <span class="gig-name">${g.seller} · ${g.dept}</span>
+        </div>
+        <div class="gig-title">${g.title}</div>
+        <div class="gig-footer">
+          <div class="gig-price">🪙 ${g.price} CC <span style="font-size:.72rem;font-family:DM Sans;font-weight:400;color:var(--muted)">/ ${g.unit}</span></div>
+          <div class="gig-rating"><span style="color:#d4862a">★</span> ${g.rating} · ${g.reviews} reviews</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function openGigDetail(id) {
+      const g = GIGS.find(x => x.id === id);
+      currentGig = g;
+      document.getElementById('freelance-browse-view').style.display = 'none';
+      document.getElementById('freelance-detail-view').style.display = '';
+      document.getElementById('gig-detail-info').innerHTML = `
+    <div style="font-size:3rem;margin-bottom:1rem">${g.emoji}</div>
+    <h2 style="font-family:Fraunces,serif;font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:.75rem;line-height:1.3">${g.title}</h2>
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+      <div class="av" style="width:38px;height:38px;background:${g.avColor};font-size:.8rem">${g.avInit}</div>
+      <div>
+        <div style="font-weight:600;font-size:.9rem;color:var(--ink)">${g.seller}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${g.dept}</div>
+      </div>
+      <div style="margin-left:auto;font-size:.85rem;color:var(--muted)"><span style="color:#d4862a">★</span> ${g.rating} (${g.reviews} reviews)</div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:.95rem;color:var(--ink-m);line-height:1.7;margin-bottom:1.5rem">${g.desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem">
+      <div class="card" style="padding:1rem"><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Delivery</div><div style="font-weight:600;margin-top:.2rem">${g.delivery}</div></div>
+      <div class="card" style="padding:1rem"><div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Price</div><div style="font-weight:600;font-family:Fraunces,serif;font-size:1.1rem;margin-top:.2rem">🪙 ${g.price} CC<span style="font-size:.72rem;font-family:DM Sans;font-weight:400"> / ${g.unit}</span></div></div>
+    </div>
+    <div style="font-weight:600;margin-bottom:.75rem">What's included</div>
+    <div style="display:flex;flex-direction:column;gap:.4rem;font-size:.88rem;color:var(--ink-m)">
+      <div>✅ ${g.desc.split('.')[0]}</div>
+      <div>✅ Direct communication via campus messages</div>
+      <div>✅ Revisions included</div>
+      <div>✅ 100% student satisfaction guarantee</div>
+    </div>
+  `;
+      document.getElementById('gig-order-box').innerHTML = `
+    <div style="font-family:Fraunces,serif;font-size:1.6rem;font-weight:700;color:var(--ink);margin-bottom:.25rem">🪙 ${g.price} CC</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:1.25rem">per ${g.unit} · Delivered in ${g.delivery}</div>
+    <button class="btn-primary" style="width:100%;padding:.75rem;font-size:.95rem;margin-bottom:.75rem" onclick="startGigOrder(${g.id})">Order Now</button>
+    <button class="btn-sm" style="width:100%;padding:.7rem;font-size:.88rem;margin-bottom:1rem" onclick="openDirectMsg('${g.seller}','${g.avInit}','${g.avColor}')">Message Seller</button>
+    <div class="divider"></div>
+    <div style="font-size:.78rem;color:var(--muted);text-align:center">🔒 Secure student payment · Satisfaction guaranteed</div>
+  `;
+      window.scrollTo(0, 0);
+    }
+
+    function showFreelanceBrowse() {
+      document.getElementById('freelance-browse-view').style.display = '';
+      document.getElementById('freelance-detail-view').style.display = 'none';
+    }
+
+    function startGigOrder(id) {
+      const g = GIGS.find(x => x.id === id) || currentGig;
+      currentGig = g;
+      goPayment(g.price, `${g.emoji} ${g.title}`, `Seller: ${g.seller}`, 'freelance');
+    }
+
+    function renderMyOrders() {
+      document.getElementById('freelance-browse-view').style.display = '';
+      document.getElementById('freelance-detail-view').style.display = 'none';
+      const c = document.getElementById('gig-grid');
+      if (!myOrders.length) {
+        c.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:1rem">📦</div><div style="font-family:Fraunces,serif;font-size:1.2rem;color:var(--ink);margin-bottom:.5rem">No active orders</div><p>Browse gigs and place your first order!</p></div>`;
+        return;
+      }
+      c.innerHTML = myOrders.map(o => `
+    <div class="gig-card" style="cursor:default">
+      <div class="gig-banner" style="background:${o.bannerBg}">${o.emoji}</div>
+      <div class="gig-body">
+        <div class="gig-title">${o.title}</div>
+        <div style="margin:.5rem 0"><span class="badge ${o.step >= o.steps.length - 1 ? 'b-sage' : o.step >= 2 ? 'b-amber' : 'b-violet'}">${o.status}</span></div>
+        <div class="steps" style="margin-top:.75rem">
+          ${o.steps.map((s, i) => `
+            <div class="step ${i < o.step ? 'done' : i === o.step ? 'active' : ''}">
+              <div class="step-num" style="width:24px;height:24px;font-size:.7rem">${i < o.step ? '✓' : i + 1}</div>
+              <div class="step-label" style="font-size:.7rem">${s}</div>
+            </div>
+            ${i < o.steps.length - 1 ? '<div class="step-line"></div>' : ''}
+          `).join('')}
+        </div>
+        ${o.step < o.steps.length - 1 ? `<button class="btn-sm" style="width:100%;margin-top:.75rem;font-size:.78rem" onclick="advanceOrder(${o.id})">Mark Next Step</button>`
+          : `<button class="btn-sm" style="width:100%;margin-top:.75rem;font-size:.78rem" onclick="openRateModal('${o.seller}')">⭐ Review Seller</button>`}
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function advanceOrder(id) {
+      const o = myOrders.find(x => x.id === id);
+      if (!o || o.step >= o.steps.length - 1) return;
+      o.step++;
+      const statuses = ['Order Placed', 'Seller Confirmed', 'In Progress', 'Review In Progress', 'Delivered!'];
+      o.status = statuses[o.step] || 'Complete';
+      if (o.step >= o.steps.length - 1) {
+        toast('🎉 Delivery complete! Please leave a review.');
+        earnCoins(o.price || 50, `Gig delivered: ${o.title}`);
+        openRateModal(o.seller);
+      } else {
+        toast(`✅ Order status updated: ${o.status}`);
+      }
+      renderMyOrders();
+    }
+
+    function postGig() {
+      const title = document.getElementById('pg-title').value.trim();
+      const price = document.getElementById('pg-price').value;
+      const cat = document.getElementById('pg-cat').value;
+      const desc = document.getElementById('pg-desc').value.trim();
+      if (!title || !price || !desc) { toast('⚠️ Please fill all required fields'); return }
+      closeModal('modal-post-gig');
+      const emojis = { design: '🎨', tutoring: '📖', writing: '✍️', media: '🎬', tech: '💻' };
+      const colors = { design: '#e8f0eb', tutoring: '#eeebf5', writing: '#faede9', media: '#e4f4f4', tech: '#eeebf5' };
+      GIGS.unshift({ id: Date.now(), emoji: emojis[cat] || '💼', bannerBg: colors[cat] || '#e8f0eb', title, seller: currentUser.name, dept: currentUser.dept + ', ' + currentUser.year, avColor: currentUser.color, avInit: currentUser.initials, price: parseInt(price), unit: 'order', rating: 0, reviews: 0, delivery: document.getElementById('pg-delivery').value, cat, desc });
+      renderGigGrid('all');
+      toast('✅ Gig posted! Students can now place orders.');
+    }
+
+    // ──────────────────────────────────────────
+    // CAMPUSCOINS (CC) — credits economy, no real money
+    // ──────────────────────────────────────────
+    function getCoins() { return currentUser ? (currentUser.coins || 0) : 0; }
+    function setCoins(n) {
+      if (!currentUser) return;
+      currentUser.coins = Math.max(0, n);
+      saveUsers();
+      updateCoinUI();
+    }
+    function earnCoins(n, reason) {
+      if (!currentUser) return;
+      setCoins(getCoins() + n);
+      toast(`🪙 +${n} CC earned — ${reason}`);
+    }
+    function spendCoins(n, reason) {
+      if (!currentUser) { toast('⚠️ Log in to spend CampusCoins'); return false; }
+      if (getCoins() < n) {
+        toast(`⚠️ Not enough CampusCoins. You need ${n} CC but have ${getCoins()} CC. Earn more by teaching, freelancing or sharing notes!`);
+        return false;
+      }
+      setCoins(getCoins() - n);
+      toast(`🪙 −${n} CC · ${reason}`);
+      return true;
+    }
+    function updateCoinUI() {
+      const el = document.getElementById('nav-coins');
+      if (!currentUser) { el.style.display = 'none'; return; }
+      el.style.display = '';
+      document.getElementById('nav-coins-n').textContent = getCoins();
+    }
+
+    // Replaces old payment flow — instant credit transfer
+    function goPayment(amount, title, subtitle, returnPage) {
+      if (!currentUser) { authRedirect = returnPage; goPage('auth'); return; }
+      if (!spendCoins(amount, title)) {
+        // Send back to where they came from
+        setTimeout(() => goPage(returnPage), 600);
+        return;
+      }
+      // Success — fulfill the order
+      if (currentGig) {
+        myOrders.unshift({ id: Date.now(), emoji: currentGig.emoji, bannerBg: currentGig.bannerBg, title: currentGig.title, seller: currentGig.seller, avColor: currentGig.avColor, avInit: currentGig.avInit, price: currentGig.price, step: 1, status: 'Seller Confirmed', steps: ['Order Placed', 'Seller Confirmed', 'In Progress', 'Review', 'Delivered'] });
+        addMsgThread(currentGig.seller, currentGig.avInit, currentGig.avColor, `Hi! Your order for "${currentGig.title}" has been received. I'll start working on it shortly!`);
+        toast(`🎉 Order placed — ${currentGig.seller} will deliver soon.`);
+        goPage('freelance');
+        setTimeout(() => {
+          const tabs = document.querySelectorAll('#page-freelance .tab-btn');
+          if (tabs[5]) switchFreelanceTab('my-gigs', tabs[5]);
+        }, 50);
+        currentGig = null;
+        return;
+      }
+      // Notes purchase
+      toast(`📥 "${title}" unlocked — download starting!`);
+      goPage(returnPage);
+    }
+
+    // ──────────────────────────────────────────
+    // NOTES
+    // ──────────────────────────────────────────
+    function switchNotesTab(tab, btn) {
+      document.querySelectorAll('#page-notes .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderNotes(tab);
+    }
+
+    function renderNotes(filter) {
+      const c = document.getElementById('notes-list');
+      let list = NOTES;
+      if (filter === 'my') list = NOTES.filter(n => n.seller === currentUser?.name).concat(NOTES.slice(0, 1));
+      if (filter === 'purchased') list = NOTES.slice(0, 2);
+      c.innerHTML = list.map(n => `
+    <div class="note-card">
+      <div class="note-icon" style="background:${n.color}">${n.icon}</div>
+      <div class="note-info">
+        <div class="note-title">${n.subject}</div>
+        <div class="note-meta">by ${n.seller} · ${n.sem} · ${n.downloads} downloads · <span style="color:#d4862a">★</span> ${n.rating}</div>
+        <div class="note-desc" style="font-size:0.75rem; color:var(--muted); margin-top:4px; line-height: 1.4;">${n.desc || 'No description provided.'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="note-price">${n.price === 0 ? 'Free' : ('🪙 ' + n.price + ' CC')}</div>
+        <button class="btn-primary" style="font-size:.78rem;padding:.4rem .9rem;margin-top:.4rem" onclick="${n.price === 0 ? `downloadNote(${n.id})` : `buyNote(${n.id})`}">
+          ${n.price === 0 ? '📥 Download' : 'Buy & Download'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    function downloadNote(id) { 
+      const n = NOTES.find(x => x.id === id);
+      if(!n) return;
+      toast(`📥 "${n.subject}" download started!`);
+      n.downloads++; saveDB(); renderNotes('all');
+      if (n.fileUrl) window.open(n.fileUrl, '_blank');
+    }
+
+    function buyNote(id) {
+      const n = NOTES.find(x => x.id === id);
+      if(!n) return;
+      if (!currentUser) { authRedirect = 'notes'; goPage('auth'); return; }
+      
+      // Perform payment & transfer
+      if (!spendCoins(n.price, `📚 ${n.subject}`)) { return; }
+      
+      // Transfer to seller if possible
+      const sellerProfile = USERS.find(u => u.name === n.seller || u.fname === n.seller);
+      if (sellerProfile) {
+        sellerProfile.coins = (sellerProfile.coins || 0) + n.price;
+        saveUsers();
+      }
+
+      toast(`📥 "${n.subject}" unlocked — download starting!`);
+      n.downloads++; saveDB(); renderNotes('all');
+      if (n.fileUrl) window.open(n.fileUrl, '_blank');
+    }
+
+    
+    let pendingUploadUrl = '';
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if(!file) return;
+      document.getElementById('upload-txt').textContent = '⏳ Uploading...';
+      const ref = storage.ref('notes/' + Date.now() + '_' + file.name);
+      ref.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
+        pendingUploadUrl = url;
+        document.getElementById('upload-txt').textContent = '✅ File Uploaded: ' + file.name;
+      }).catch(e => toast('⚠️ Upload failed: ' + e.message));
+    }
+
+    function uploadNotes() {
+      if (!currentUser) { toast('⚠️ Log in first'); return; }
+      const sub = document.getElementById('un-subject').value.trim();
+      const sem = document.getElementById('un-sem').value.trim() || 'Any Semester';
+      const desc = document.getElementById('un-desc').value.trim() || 'Uploaded document.';
+      const price = document.getElementById('un-price').value;
+      if (!sub) { toast('⚠️ Please enter the subject name'); return }
+      closeModal('modal-upload-notes');
+      const p = parseInt(price) || 0;
+      NOTES.unshift({ 
+        id: Date.now(), subject: sub, seller: currentUser.name, sem: sem, desc: desc,
+        icon: '📄', color: '#e8f0eb', price: p, downloads: 0, rating: 0, 
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' 
+      });
+      saveDB();
+      earnCoins(p === 0 ? 15 : 10, p === 0 ? 'Shared free notes 🙌' : 'Notes uploaded');
+      renderNotes('my');
+      toast('✅ Notes uploaded! Other students can now access them.');
+    }
+
+    // ──────────────────────────────────────────
+    // COMMUNITY
+    // ──────────────────────────────────────────
+    let composeType = 'Skill Request';
+    function selType(btn, type) {
+      document.querySelectorAll('.type-sel').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      composeType = type;
+    }
+
+    function submitPost() {
+      const text = document.getElementById('compose-text').value.trim();
+      if (!text) { toast('⚠️ Please write something first'); return }
+      if (!currentUser) { toast('⚠️ Please log in first'); return }
+      communityPosts.unshift({
+        id: Date.now(), author: currentUser.name, dept: currentUser.dept + ', ' + currentUser.year,
+        type: composeType, title: text.slice(0, 80) + (text.length > 80 ? '…' : ''),
+        body: text, av: currentUser.initials, color: currentUser.color, time: 'Just now', likes: 0, comments: 0
+      });
+      saveDB();
+      document.getElementById('compose-text').value = '';
+      renderCommunity();
+      toast('✅ Post published to community!');
+    }
+
+    function tipUser(author) {
+      if (!currentUser) { authRedirect = 'community'; goPage('auth'); return; }
+      if (currentUser.name === author || currentUser.fname === author) { toast("⚠️ You can't tip yourself!"); return; }
+      if (spendCoins(10, `Tipped ${author} on community`)) {
+        let sellerProfile = USERS.find(u => u.name === author || u.fname === author);
+        if (sellerProfile) {
+          sellerProfile.coins = (sellerProfile.coins || 0) + 10;
+          saveUsers();
+        }
+        toast(`🎉 Tipped 10 CC to ${author}!`);
+      }
+    }
+
+    function renderCommunity() {
+      const feed = document.getElementById('community-feed');
+      const typeColors = {
+        'Skill Request': 'b-violet', 'Gig Offer': 'b-amber', 'Study Group': 'b-teal', 'Notes': 'b-sage'
+      };
+      feed.innerHTML = communityPosts.map(p => `
+    <div class="post-card">
+      <div class="post-hdr">
+        <div class="av" style="width:38px;height:38px;background:${p.color};font-size:.8rem">${p.av}</div>
+        <div class="post-meta">
+          <div class="post-meta-name">${p.author}</div>
+          <div class="post-meta-info">${p.dept} · ${p.time}</div>
+        </div>
+        <span class="badge ${typeColors[p.type] || 'b-gray'}">${p.type}</span>
+      </div>
+      <div class="post-title">${p.title}</div>
+      <div class="post-body-text">${p.body}</div>
+      <div class="post-ftr">
+        <button class="post-act" onclick="likePost(${p.id},this)">❤️ ${communityLikes[p.id] || p.likes}</button>
+        <button class="post-act" onclick="toast('💬 Comment feature coming soon!')">💬 ${p.comments}</button>
+        <button class="post-act" onclick="tipUser('${p.author}')" style="color:#d4862a; font-weight: 600;">🪙 Tip 10 CC</button>
+        <button class="post-act" onclick="openDirectMsg('${p.author}','${p.av}','${p.color}')" style="margin-left:auto">↗ Connect</button>
+      </div>
+    </div>
+  `).join('');
+
+      // Trending
+      document.getElementById('trending-skills').innerHTML =
+        ['UI Design', 'Python', 'Video Editing', 'Photography', 'React'].map((s, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.83rem;padding:.2rem 0;border-bottom:1px solid var(--border)">
+        <span>${s}</span><span style="color:var(--sage);font-weight:600">↑ ${24 - i * 3}</span>
+      </div>`).join('');
+
+      // Active members
+      document.getElementById('active-members').innerHTML =
+        SKILL_LISTINGS.slice(0, 4).map(s => `
+      <div style="display:flex;align-items:center;gap:.6rem;cursor:pointer" onclick="openDirectMsg('${s.name}','${s.av}','${s.color}')">
+        <div class="av" style="width:30px;height:30px;background:${s.color};font-size:.68rem">${s.av}</div>
+        <div><div style="font-size:.83rem;font-weight:500;color:var(--ink)">${s.name}</div><div style="font-size:.72rem;color:var(--muted)">${s.dept}</div></div>
+        <div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:#4a7c59"></div>
+      </div>`).join('');
+    }
+
+    function likePost(id, btn) {
+      communityLikes[id] = (communityLikes[id] || communityPosts.find(p => p.id === id)?.likes || 0) + 1;
+      btn.innerHTML = `❤️ ${communityLikes[id]}`;
+      toast('❤️ Liked!');
+    }
+
+    // ──────────────────────────────────────────
+    // MESSAGES
+    // ──────────────────────────────────────────
+    function addMsgThread(name, av, color, firstMsg) {
+      const ex = msgThreads.find(t => t.name === name);
+      if (ex) { ex.thread.push({ me: false, text: firstMsg, time: 'Just now' }); return }
+      msgThreads.unshift({ id: Date.now(), name, av, color, preview: firstMsg, unread: 1, thread: [{ me: false, text: firstMsg, time: 'Just now' }] });
+    }
+
+    function openDirectMsg(name, av, color) {
+      addMsgThread(name, av, color, `Hi! I'm interested in connecting.`);
+      requireAuth('messages');
+      setTimeout(() => selectContact(msgThreads.findIndex(t => t.name === name)), 100);
+    }
+
+    function renderMessages() {
+      const sb = document.getElementById('msg-sidebar');
+      sb.innerHTML = msgThreads.map((t, i) => `
+    <div class="msg-contact ${i === currentContact ? 'active' : ''}" onclick="selectContact(${i})">
+      <div class="av" style="width:38px;height:38px;background:${t.color};font-size:.8rem;position:relative">
+        ${t.av}
+        ${t.unread ? `<span style="position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--coral);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white">${t.unread}</span>` : ''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="msg-c-name">${t.name}</div>
+        <div class="msg-c-prev">${t.preview}</div>
+      </div>
+    </div>
+  `).join('');
+      renderThread(currentContact);
+    }
+
+    function selectContact(i) {
+      currentContact = i;
+      msgThreads[i].unread = 0;
+      renderMessages();
+    }
+
+    function renderThread(i) {
+      const t = msgThreads[i];
+      if (!t) return;
+      document.getElementById('msg-thread-header').innerHTML = `
+    <div class="av" style="width:36px;height:36px;background:${t.color};font-size:.78rem">${t.av}</div>
+    <div><div style="font-weight:600;font-size:.9rem;color:var(--ink)">${t.name}</div><div style="font-size:.73rem;color:var(--sage)">● Online</div></div>
+    <div style="margin-left:auto;display:flex;gap:.5rem">
+      <button class="btn-sm" style="font-size:.78rem" onclick="toast('📹 Video call feature coming soon!')">📹 Call</button>
+    </div>
+  `;
+      const body = document.getElementById('msg-body');
+      body.innerHTML = t.thread.map(m => `
+    <div class="bubble bubble-${m.me ? 'me' : 'them'}">
+      ${m.text}
+      <div style="font-size:.65rem;opacity:.6;margin-top:.25rem;text-align:${m.me ? 'right' : 'left'}">${m.time}</div>
+    </div>
+  `).join('');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function sendMsg() {
+      const inp = document.getElementById('msg-input');
+      const text = inp.value.trim();
+      if (!text) return;
+      const t = msgThreads[currentContact];
+      t.thread.push({ me: true, text, time: 'Just now' });
+      t.preview = text;
+      inp.value = '';
+      renderMessages();
+      saveDB(); // Syncs immediately
+    }
+
+    // ──────────────────────────────────────────
+    // PROFILE
+    // ──────────────────────────────────────────
+    function renderProfile() {
+      if (!currentUser) return;
+      document.getElementById('profile-nm').textContent = currentUser.name;
+      document.getElementById('profile-dept').textContent = (currentUser.dept || 'Campus Student') + ' · ' + (currentUser.year || '');
+      document.getElementById('profile-chips').innerHTML = userSkills.map(s => `<span class="skill-chip">${s}</span>`).join('');
+
+      const exDiv = document.getElementById('profile-exchanges');
+      exDiv.innerHTML = myExchanges.length ? myExchanges.map(ex => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--bg);border-radius:var(--r-s)">
+      <div class="av" style="width:36px;height:36px;background:${ex.color};font-size:.78rem">${ex.av}</div>
+      <div style="flex:1"><div style="font-size:.88rem;font-weight:600;color:var(--ink)">${ex.partner}</div><div style="font-size:.75rem;color:var(--muted)">${ex.teach} ↔ ${ex.learn}</div></div>
+      <span class="badge b-sage">${ex.status}</span>
+    </div>`).join('')
+        : `<div style="color:var(--muted);font-size:.88rem">No active exchanges yet. <span style="color:var(--sage);cursor:pointer" onclick="requireAuth('skill-exchange')">Start exchanging →</span></div>`;
+
+      const gigsDiv = document.getElementById('profile-gigs');
+      gigsDiv.innerHTML = myOrders.length ? myOrders.map(o => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--bg);border-radius:var(--r-s)">
+      <div style="font-size:1.5rem">${o.emoji}</div>
+      <div style="flex:1"><div style="font-size:.88rem;font-weight:600;color:var(--ink)">${o.title}</div><div style="font-size:.75rem;color:var(--muted)">Seller: ${o.seller}</div></div>
+      <span class="badge b-amber">${o.status}</span>
+    </div>`).join('')
+        : `<div style="color:var(--muted);font-size:.88rem">No active orders. <span style="color:var(--sage);cursor:pointer" onclick="requireAuth('freelance')">Browse gigs →</span></div>`;
+
+      document.getElementById('profile-reviews').innerHTML = `
+    <div style="padding:.75rem;background:var(--bg);border-radius:var(--r-s)">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="color:#d4862a">★★★★★</span><span style="font-size:.78rem;color:var(--muted)">Priya S. · Skill Exchange</span></div>
+      <div style="font-size:.85rem;color:var(--ink-m);font-style:italic">"Super patient teacher, explained Python concepts really clearly. Highly recommend!"</div>
+    </div>
+    <div style="padding:.75rem;background:var(--bg);border-radius:var(--r-s)">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="color:#d4862a">★★★★★</span><span style="font-size:.78rem;color:var(--muted)">Asha M. · Tutoring Gig</span></div>
+      <div style="font-size:.85rem;color:var(--ink-m);font-style:italic">"Helped me crack my Data Structures exam. Would book again for sure."</div>
+    </div>`;
+    }
+
+    function saveSkills() {
+      const have = document.getElementById('es-have').value.trim();
+      if (have) { userSkills = [...new Set([...userSkills, ...have.split(',').map(s => s.trim()).filter(Boolean)])] }
+      closeModal('modal-edit-skills');
+      renderProfile();
+      toast('✅ Profile updated!');
+    }
+
+    // ──────────────────────────────────────────
+    // REVIEWS & RATINGS
+    // ──────────────────────────────────────────
+    function openRateModal(name) {
+      document.getElementById('review-sub').textContent = `Rate your experience with ${name}`;
+      currentRating = 0;
+      document.querySelectorAll('.star-btn').forEach(b => b.style.color = 'var(--border-s)');
+      openModal('modal-review');
+    }
+
+    function setRating(n) {
+      currentRating = n;
+      document.querySelectorAll('.star-btn').forEach((b, i) => b.style.color = i < n ? '#d4862a' : 'var(--border-s)');
+    }
+
+    function submitReview() {
+      if (!currentRating) { toast('⚠️ Please select a star rating'); return }
+      const text = document.getElementById('review-text').value.trim();
+      if (!text) { toast('⚠️ Please write a review'); return }
+      closeModal('modal-review');
+      toast(`⭐ Review submitted! ${currentRating} stars.`);
+    }
+
+    // ──────────────────────────────────────────
+    // INIT
+    // ──────────────────────────────────────────
+    // Pre-confirm one exchange so user can see workflow
+    setTimeout(() => {
+      if (myExchanges.length === 0) {
+        myExchanges.push({
+          id: 1, partner: 'Priya Sharma', av: 'PS', color: '#c4614a', teach: 'Python', learn: 'Figma',
+          step: 2, status: 'Confirmed — Session pending',
+          steps: ['Request Sent', 'Partner Confirmed', 'Session 1', 'Session 2', 'Complete']
+        });
+      }
+    }, 0);
+
+    renderGigGrid('all');
+    renderNotes('all');
+    renderCommunity();
+    renderMessages();
+    loadUsers();
+    window.addEventListener('load', () => setTimeout(renderGoogleButtons, 300));
+  </script>
+</body>
+
+</html>
